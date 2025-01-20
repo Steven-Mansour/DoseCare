@@ -12,7 +12,7 @@ def create_app():
     # Disable event system for performance
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     db.init_app(app)
-
+    # REGISTER BLUEPRINT
     from main import main as main_blueprint
     app.register_blueprint(main_blueprint)
 
