@@ -11,7 +11,7 @@ def create_app():
     app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://stvn:password@localhost/dosecaredb'
     # Disable event system for performance
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-
+    # init
     db.init_app(app)
 
     from main import main as main_blueprint
