@@ -1,0 +1,170 @@
+{%extends "base.html"%}
+{% block title %}Login{% endblock %}
+
+{% block content %}
+<section class="bg-gray-50 dark:bg-gray-900">
+    <div class="flex flex-col items-center justify-center px-6 py-8 mx-auto  lg:py-0">
+        <a href="#" class="flex items-center mb-6 text-2xl font-semibold text-gray-900 dark:text-white">
+            DoseCare™
+        </a>
+        <div
+            class="w-full bg-white rounded-lg shadow dark:border md:mt-0 sm:max-w-md xl:p-0 dark:bg-gray-800 dark:border-gray-700">
+            <div class="p-6 space-y-4 md:space-y-6 sm:p-8">
+                <h1 class="text-xl font-bold leading-tight tracking-tight text-gray-900 md:text-2xl dark:text-white">
+                    Create an account
+                </h1>
+                <form class="space-y-4 md:space-y-6" action="#">
+                    <div>
+                        <label for="email" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Your
+                            email</label>
+                        <input type="email" name="email" id="email"
+                            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                            placeholder="name@company.com" required="">
+                    </div>
+                    <div>
+                        <label for="password"
+                            class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Password</label>
+                        <input type="password" name="password" id="password" placeholder="••••••••"
+                            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                            required="">
+                    </div>
+                    <div>
+                        <label for="confirm-password"
+                            class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Confirm
+                            password</label>
+                        <input type="confirm-password" name="confirm-password" id="confirm-password"
+                            placeholder="••••••••"
+                            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                            required="">
+                    </div>
+                    <div>
+                        <label for="role" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+                            Select your role
+                        </label>
+                        <select id="role" name="role"
+                            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                            required>
+                            <option value="" disabled selected>Select your role</option>
+                            <option value="patient">Patient</option>
+                            <option value="caregiver">Caregiver</option>
+                            <option value="pharmacist">Pharmacist</option>
+                        </select>
+                    </div>
+                    <!-- Dynamic Fields -->
+                    <div id="dynamic-fields" class="mt-4 space-y-4">
+                        <!-- Fields will be appended here dynamically -->
+                    </div>
+                    <div class="flex items-start">
+                        <div class="flex items-center h-5">
+                            <input id="terms" aria-describedby="terms" type="checkbox"
+                                class="w-4 h-4 border border-gray-300 rounded bg-gray-50 focus:ring-3 focus:ring-blue-300 dark:bg-gray-700 dark:border-gray-600 dark:focus:ring-blue-600 dark:ring-offset-gray-800"
+                                required="">
+                        </div>
+                        <div class="ml-3 text-sm">
+                            <label for="terms" class="font-light text-gray-500 dark:text-gray-300">I accept the <a
+                                    class="font-medium text-primary-600 hover:underline dark:text-primary-500"
+                                    href="#">Terms and Conditions</a></label>
+                        </div>
+                    </div>
+                    <button type="submit"
+                        class="w-full text-white bg-blue-600 hover:bg-blue-700 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">Create
+                        an account</button>
+                    <p class="text-sm font-light text-gray-500 dark:text-gray-400">
+                        Already have an account? <a href="#"
+                            class="font-medium text-primary-600 hover:underline dark:text-primary-500">Login here</a>
+                    </p>
+                </form>
+            </div>
+        </div>
+    </div>
+</section>
+<script>
+    const roleSelect = document.getElementById('role');
+    const dynamicFields = document.getElementById('dynamic-fields');
+
+    roleSelect.addEventListener('change', () => {
+        const role = roleSelect.value;
+        dynamicFields.innerHTML = ''; // Clear previous fields
+
+        if (role === 'patient') {
+            dynamicFields.innerHTML = `
+                <div>
+                    <label for="first-name" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+                        First Name
+                    </label>
+                    <input type="text" id="first-name" name="first-name" placeholder="First Name"
+                        class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                        required>
+                </div>
+                <div>
+                    <label for="last-name" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+                        Last Name
+                    </label>
+                    <input type="text" id="last-name" name="last-name" placeholder="Last Name"
+                        class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                        required>
+                </div>
+                <div>
+                    <label for="emergency-contact" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+                        Emergency Contact #
+                    </label>
+                    <input type="tel" id="emergency-contact" name="emergency-contact" placeholder="Emergency Contact #"
+                        class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                        required>
+                </div>`;
+        } else if (role === 'caregiver') {
+            dynamicFields.innerHTML = `
+                <div>
+                    <label for="first-name" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+                        First Name
+                    </label>
+                    <input type="text" id="first-name" name="first-name" placeholder="First Name"
+                        class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                        required>
+                </div>
+                <div>
+                    <label for="last-name" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+                        Last Name
+                    </label>
+                    <input type="text" id="last-name" name="last-name" placeholder="Last Name"
+                        class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                        required>
+                </div>
+                <div>
+                    <label for="phone-number" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+                        Phone #
+                    </label>
+                    <input type="tel" id="phone-number" name="phone-number" placeholder="Phone #"
+                        class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                        required>
+                </div>`;
+        } else if (role === 'pharmacist') {
+            dynamicFields.innerHTML = `
+                <div>
+                    <label for="pharmacy-name" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+                        Pharmacy Name
+                    </label>
+                    <input type="text" id="pharmacy-name" name="pharmacy-name" placeholder="Pharmacy Name"
+                        class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                        required>
+                </div>
+                <div>
+                    <label for="location" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+                        Location
+                    </label>
+                    <input type="text" id="location" name="location" placeholder="Location"
+                        class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                        required>
+                </div>
+                <div>
+                    <label for="phone-number" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+                        Phone #
+                    </label>
+                    <input type="tel" id="phone-number" name="phone-number" placeholder="Phone #"
+                        class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                        required>
+                </div>`;
+        }
+    });
+</script>
+{% endblock %}

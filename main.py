@@ -10,4 +10,4 @@ def index():
     #    new_user = User(name="steven")
     #    db.session.add(new_user)
     #    db.session.commit()
-    return render_template('login.html')
+    return render_template('signUp.html')
