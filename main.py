@@ -7,7 +7,7 @@ main = Blueprint('main', __name__)
 
 @main.route('/')
 def index():
-    #    new_user = User(name="steven")
-    #    db.session.add(new_user)
-    #    db.session.commit()
-    return render_template('base.html')
+    new_user = User(name="test")
+    db.session.add(new_user)
+    db.session.commit()
+    return render_template('signUp.html')
