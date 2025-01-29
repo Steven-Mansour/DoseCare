@@ -1,8 +1,9 @@
 from app import db
 from werkzeug.security import generate_password_hash, check_password_hash
+from flask_login import UserMixin
 
 
-class User(db.Model):
+class User(db.Model, UserMixin):
     userID = db.Column(db.Integer, primary_key=True, autoincrement=True)
     email = db.Column(db.String(120), unique=True,
                       nullable=False)
@@ -15,6 +16,10 @@ class User(db.Model):
     def check_password(self, password):
         """Verify the provided password against the stored hash"""
         return check_password_hash(self.password_hash, password)
+
+    def get_id(self):
+        """Return the user ID for Flask-Login"""
+        return str(self.userID)  # Ensure it's returned as a string
 
 
 class Caregiver(db.Model):
