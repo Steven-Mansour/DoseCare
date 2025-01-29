@@ -6,11 +6,16 @@ from flask import Flask
 with create_app().app_context():
 
     # Create Users
-    user1 = User(email='john.doe@example.com', password_hash='hashedpassword1')
-    user2 = User(email='jane.smith@example.com',
-                 password_hash='hashedpassword2')
+    user1 = User(email='john.doe@example.com')
+    user1.set_password('hashedpassword1')  # Hash the password before storing
 
-    db.session.add_all([user1, user2])
+    user2 = User(email='jane.smith@example.com')
+    user2.set_password('hashedpassword2')  # Hash the password before storing
+
+    user3 = User(email='steven.mansour@lau.edu')
+    user3.set_password('steven')  # Hash the password before storing
+
+    db.session.add_all([user1, user2, user3])
     db.session.commit()
 
     # Create Caregivers
@@ -28,11 +33,11 @@ with create_app().app_context():
     db.session.commit()
 
     # Create Pharmacy
-    # pharmacy1 = Pharmacy(name='Health Pharmacy',
-    #                      location='123 Main St', phoneNb='5551234', userID=user1.userID)
+    pharmacy1 = Pharmacy(name='Health Pharmacy',
+                         location='123 Main St', phoneNb='5551234', userID=user3.userID)
 
-    # db.session.add(pharmacy1)
-    # db.session.commit()
+    db.session.add(pharmacy1)
+    db.session.commit()
 
     # Create Pills
     pill1 = Pill(name='Paracetamol', shape='Round', size=1,
@@ -43,7 +48,7 @@ with create_app().app_context():
 
     # Create Pill Schedule
     schedule1 = PillSchedule(day=1, frequency=3, startDate='2025-01-01', endDate='2025-02-01', remainingQty=30, expiryDate='2025-12-31',
-                             containerNb=1, patientID=patient1.patientID, caregiverID=caregiver1.caregiverID, pharmacyID=None, pillID=pill1.pillID)
+                             containerNb=1, patientID=patient1.patientID, caregiverID=caregiver1.caregiverID, pharmacyID=pharmacy1.pharmacyID, pillID=pill1.pillID)
 
     db.session.add(schedule1)
     db.session.commit()
