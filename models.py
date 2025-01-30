@@ -40,7 +40,7 @@ class Patient(db.Model):
     lastName = db.Column(db.String(100), nullable=False)
     emergencyContactNb = db.Column(db.String(15), nullable=False)
     caregiverID = db.Column(db.Integer, db.ForeignKey(
-        'caregiver.caregiverID'), nullable=False)  # Foreign Key from CAREGIVER
+        'caregiver.caregiverID'), nullable=True)  # Foreign Key from CAREGIVER
     userID = db.Column(db.Integer, db.ForeignKey('user.userID'),
                        nullable=False)  # Foreign Key from USER
 
