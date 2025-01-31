@@ -3,20 +3,27 @@
 {%block pageContent%}
 
 <div class="flex flex-col h-screen items-center justify-center h-48 mb-4 rounded-sm bg-gray-50 dark:bg-gray-800">
-    <h1 class="text-2xl font-bold text-gray-900 dark:text-white text-center mb-6">List of Your Patients</h1>
+    <h1 class="text-4xl font-bold text-gray-900 dark:text-white text-center mb-6">List of Your Patients</h1>
+    <br> <br>
+    <div class="flex flex-col gap-4 ">
+        <!-- Header Row -->
+        <div class="grid gap-x-18 grid-cols-[1.5fr_1fr_1fr] text-center text-blue-600 items-center px-4  font-semibold">
+            <div>Name</div>
+            <div>Emergency Contact</div>
+            <div>Patient ID</div>
+        </div>
 
-    <div class="flex flex-col gap-4">
-
+        <!-- Patient Rows -->
         {% for patient in patients %}
-        <div class="flex items-center gap-x-8 justify-between p-4 border border-gray-300 rounded-lg bg-gray-100 w-full">
-            <!-- Name on the left -->
-            <p class="text-lg font-semibold">{{ patient.firstName|capitalize }} {{ patient.lastName|capitalize }}</p>
-
-            <!-- Contact number in the middle -->
-            <p class="text-md text-gray-600">{{ patient.emergencyContactNb }}</p>
-
-            <!-- ID on the right -->
-            <p class="text-md text-gray-600">{{ patient.patientID }}</p>
+        <div
+            class="grid gap-x-18 grid-cols-[1.5fr_1fr_1fr] text-center items-center p-4 border border-gray-300 rounded-lg bg-gray-100">
+            <div class="text-lg font-semibold">
+                <a href="{{ url_for('main.schedule', patient_id=patient.patientID) }}">{{ patient.firstName|capitalize
+                    }} {{ patient.lastName|capitalize
+                    }}</a>
+            </div>
+            <div class="text-md text-gray-600">{{ patient.emergencyContactNb }}</div>
+            <div class="text-md text-gray-600">{{ patient.patientID }}</div>
         </div>
         {% endfor %}
     </div>
