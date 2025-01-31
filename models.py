@@ -21,7 +21,7 @@ class User(db.Model, UserMixin):
         """Return the user ID for Flask-Login"""
         return str(self.userID)  # Ensure it's returned as a string
 
-    def get_role(self):
+    def get_info(self):
         """Check if the user is a patient, caregiver, or pharmacist and return a dictionary."""
         if self.patients:  # Checks if the user has an associated patient record
             return {"role": "patient", "name": self.patients[0].firstName}

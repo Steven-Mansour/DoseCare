@@ -1,5 +1,5 @@
-from flask import Blueprint, render_template, redirect, url_for, request
-from models import User, Pill
+from flask import Blueprint, render_template, redirect, url_for, request, flash
+from models import User, Pill, Caregiver, Patient
 from app import db
 from flask_login import login_required, current_user
 
@@ -14,21 +14,67 @@ def index():
 @main.route('/home')
 @login_required
 def home():
-    return render_template("home.html", user=current_user.get_role())
+    return render_template("home.html", user=current_user.get_info())
 
 
 @main.route('/createPill')
 @login_required
 def createPill():
-    if current_user.get_role()['role'] != 'pharmacist':
+    if current_user.get_info()['role'] != 'pharmacist':
         return redirect(url_for('auth.login'))
-    return render_template("createPill.html", user=current_user.get_role())
+    return render_template("createPill.html", user=current_user.get_info())
+
+
+@main.route('/assignCaregiver')
+@login_required
+def assignCaregiver():
+    if current_user.get_info()['role'] != 'patient':
+        flash('You need patient privileges!')
+        return redirect(url_for('auth.login'))
+    return render_template("assignCaregiver.html", user=current_user.get_info())
+
+
+@main.route('/assignCaregiver', methods=['POST'])
+@login_required
+def assignCaregiver_post():
+    if current_user.get_info()['role'] != 'patient':
+        flash('You need patient privileges!')
+        return redirect(url_for('auth.login'))
+    caregiverInfo = request.form.get('caregiver-info')
+    user = current_user
+    patient = user.patients[0]
+    if '@' in caregiverInfo:
+        caregiver_user = User.query.filter_by(email=caregiverInfo).first()
+        if caregiver_user:
+            caregiver = Caregiver.query.filter_by(
+                userID=caregiver_user.userID).first()
+            if caregiver:
+                flash(
+                    f"You have successfully assigned {caregiver.firstName} as your caregiver")
+                patient.caregiverID = caregiver.caregiverID
+                db.session.commit()
+            else:
+                flash(f"The user is not a caregiver")
+        else:
+            flash("No caregiver was found for the email provided")
+    else:
+        caregiver = Caregiver.query.filter_by(
+            caregiverID=caregiverInfo).first()
+        if caregiver:
+            flash(
+                f"You have successfully assigned {caregiver.firstName} as your caregiver")
+            patient.caregiverID = caregiver.caregiverID
+            db.session.commit()
+        else:
+            flash(f"The user is not a caregiver")
+
+    return render_template("assignCaregiver.html", user=current_user.get_info(), caregiver=patient.caregiver)
 
 
 @main.route('/createPill', methods=['POST'])
 @login_required
 def createPill_post():
-    if current_user.get_role()['role'] != 'pharmacist':
+    if current_user.get_info()['role'] != 'pharmacist':
         return redirect(url_for('auth.login'))
     pillName = request.form.get('pill-name')
     shape = request.form.get('pill-shape')
@@ -38,4 +84,4 @@ def createPill_post():
     pill = Pill(name=pillName, shape=shape, size=size, boxQuantity=qty)
     db.session.add(pill)
     db.session.commit()
-    return render_template("createPill.html", user=current_user.get_role())
+    return render_template("createPill.html", user=current_user.get_info())
