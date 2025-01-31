@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, redirect, url_for, request, flash
-from models import User, Pill, Caregiver, Patient
+from models import User, Pill, Caregiver, Patient, PillSchedule
 from app import db
 from flask_login import login_required, current_user
 
@@ -15,6 +15,39 @@ def index():
 @login_required
 def home():
     return render_template("home.html", user=current_user.get_info())
+
+
+@main.route('/schedule/<int:patient_id>')
+@login_required
+def schedule(patient_id):
+    if (current_user.get_info()['role'] != 'pharmacist') and (current_user.get_info()['role'] != 'caregiver'):
+        flash("You are not allowed to access this route")
+        return redirect(url_for('auth.login'))
+    patient = Patient.query.filter_by(patientID=patient_id).first()
+    if patient:
+        if patient.caregiverID == current_user.caregivers[0].caregiverID:
+            schedules = patient.pill_schedules
+            return render_template('schedule.html', patient=patient, user=current_user.get_info(), schedules=schedules)
+        else:
+            flash("You are not allowed to access this patients schedule")
+    else:
+        flash("Patient does not exist")
+    return redirect(url_for('main.home'))
+
+
+@main.route('/editSchedule/<int:schedule_id>')
+@login_required
+def editSchedule(schedule_id):
+    if (current_user.get_info()['role'] != 'pharmacist') and (current_user.get_info()['role'] != 'caregiver'):
+        flash("You are not allowed to access this route")
+        return redirect(url_for('auth.login'))
+    schedule = PillSchedule.query.filter_by(scheduleID=schedule_id).first()
+    if schedule:
+        return render_template('editSchedule.html', user=current_user.get_info(), schedule=schedule)
+
+    else:
+        flash("Schedule does not exist")
+    return redirect(url_for('main.home'))
 
 
 @main.route('/createPill')
