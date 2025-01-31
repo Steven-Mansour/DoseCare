@@ -22,8 +22,10 @@
 
 
     </form>
+    {%if caregiver%}
     <h1 class=" mt-4 text-l font-bold text-gray-900 dark:text-white text-center mb-6">Your current caregiver is:
         {{caregiver.firstName}} {{caregiver.lastName}}</h1>
+    {%endif%}
 
 </div>
 

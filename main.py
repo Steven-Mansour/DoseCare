@@ -25,13 +25,23 @@ def createPill():
     return render_template("createPill.html", user=current_user.get_info())
 
 
+@main.route('/viewPatients')
+@login_required
+def viewPatients():
+    if current_user.get_info()['role'] != 'caregiver':
+        return redirect(url_for('auth.login'))
+    caregiver = current_user.caregivers[0]
+    return render_template("viewPatients.html", user=current_user.get_info(), patients=caregiver.patients)
+
+
 @main.route('/assignCaregiver')
 @login_required
 def assignCaregiver():
     if current_user.get_info()['role'] != 'patient':
         flash('You need patient privileges!')
         return redirect(url_for('auth.login'))
-    return render_template("assignCaregiver.html", user=current_user.get_info())
+    caregiver = current_user.patients[0].caregiver
+    return render_template("assignCaregiver.html", user=current_user.get_info(), caregiver=caregiver)
 
 
 @main.route('/assignCaregiver', methods=['POST'])
