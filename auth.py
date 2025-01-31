@@ -87,3 +87,10 @@ def login_post():
 @auth.route('/signup')
 def signup():
     return render_template('signUp.html')
+
+
+@auth.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    return redirect(url_for('auth.login'))
