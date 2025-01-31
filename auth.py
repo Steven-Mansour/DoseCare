@@ -81,7 +81,7 @@ def login_post():
         return redirect('login')
 
     login_user(user, remember=remember)
-    return redirect(url_for('main.index'))
+    return redirect(url_for('main.home'))
 
 
 @auth.route('/signup')
