@@ -1,0 +1,322 @@
+{%extends "homeTemplate.html"%}
+{% block title %}Schedules{% endblock %}
+{%block pageContent%}
+
+<div
+    class="flex flex-col h-fit min-h-screen items-center justify-center h-48 mb-4 rounded-sm bg-gray-50 dark:bg-gray-800">
+    <h1 class="text-4xl font-bold text-gray-900 dark:text-white text-center mb-6">
+        Create Schedule </h1>
+
+    <form action="{{ url_for('main.createSchedule', patient_id = patient_id) }}" method="POST">
+        <div class="grid grid-cols-1 gap-x-10 mt-6 md:grid-cols-2">
+
+            <div class="">
+                <div class="relative z-0 w-full mb-5 group">
+                    <input name="pill" id="pill" type="text"
+                        class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none dark:text-white dark:border-gray-600 dark:focus:border-blue-500 focus:outline-none focus:ring-0 focus:border-blue-600 peer"
+                        placeholder=" " oninput="searchPill()" autocomplete="off" required>
+                    <label for="pill"
+                        class="peer-focus:font-medium absolute text-sm text-gray-500 dark:text-gray-400 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-blue-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
+                        Pill
+                    </label>
+                    <!-- Hidden input to store pill ID -->
+                    <input type="hidden" name="pill_id" id="pill_id">
+                    <input type="hidden" name="patient-id" id="patient-id" value={{patient_id}}>
+                </div>
+
+                <!-- Search results container -->
+                <div id="search-results"
+                    class=" z-100 -mt-5 absolute w-1/5 bg-white border border-gray-300 rounded-lg shadow-lg z-10 hidden">
+                </div>
+
+                <div id="schedule_properties_container">
+
+                    <div class="flex w-full mb-5 gap-4" id="schedule_property_0">
+                        <!-- Time Field -->
+                        <div class="relative z-0 w-1/2 group">
+                            <input type="time" name="time_1" id="time_1"
+                                class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none dark:text-white dark:border-gray-600 dark:focus:border-blue-500 focus:outline-none focus:ring-0 focus:border-blue-600 peer"
+                                placeholder=" " required />
+                            <label for="time_1"
+                                class="peer-focus:font-medium absolute text-sm text-gray-500 dark:text-gray-400 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-blue-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
+                                Time
+                            </label>
+                        </div>
+
+                        <!-- Dose Field -->
+                        <div class="relative z-0 w-1/2 group">
+                            <input type="number" name="dose_1" id="dose_1"
+                                class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none dark:text-white dark:border-gray-600 dark:focus:border-blue-500 focus:outline-none focus:ring-0 focus:border-blue-600 peer"
+                                placeholder=" " required />
+                            <label for="dose_1"
+                                class="peer-focus:font-medium absolute text-sm text-gray-500 dark:text-gray-400 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-blue-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
+                                Dose
+                            </label>
+                        </div>
+
+                        <!-- Delete Button -->
+                        <div class="flex items-center justify-center">
+                            <button type="button" onclick="hideRow('0');"
+                                class="text-white bg-red-500 hover:bg-red-700 rounded-md p-2">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                            <input type="hidden" name="delete_0" id="delete_0" value="0">
+                        </div>
+                    </div>
+                </div>
+                <!-- Add New Entry Button -->
+                <div class="flex justify-center mt-5">
+                    <button type="button" onclick="addNewEntry();"
+                        class="text-white bg-blue-500 hover:bg-blue-700 rounded-md p-2">
+                        Add New Entry
+                    </button>
+                </div>
+                <div class="relative z-0 w-full mb-5 group">
+                    <label class="text-sm text-gray-500 dark:text-gray-400">Select Days:</label>
+                    <div class="grid grid-cols-7 gap-3 mt-2" id="days-container">
+                        <!-- Checkboxes will be dynamically inserted here -->
+                    </div>
+                </div>
+
+                <div class="relative z-0 w-full mb-5 group">
+                    <label class="text-sm text-gray-500 dark:text-gray-400 mb-2 block">Select Frequency:</label>
+                    <div class="flex items-center gap-3">
+                        <button type="button"
+                            class="px-3 py-1 text-sm font-medium text-gray-900 bg-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 hover:bg-gray-300"
+                            onclick="setFrequency(1)">Daily</button>
+                        <button type="button"
+                            class="px-3 py-1 text-sm font-medium text-gray-900 bg-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 hover:bg-gray-300"
+                            onclick="setFrequency(7)">Weekly</button>
+                        <button type="button"
+                            class="px-3 py-1 text-sm font-medium text-gray-900 bg-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 hover:bg-gray-300"
+                            onclick="setFrequency()">Custom</button>
+
+                        <!-- Smaller input on the same line -->
+                        <input type="number" name="frequency" id="frequency"
+                            class="w-16 py-1 px-2 text-sm text-gray-900 bg-transparent border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:text-white dark:border-gray-600 dark:focus:ring-blue-500"
+                            placeholder=" " value="1" required onchange="updateCheckboxes()" />
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <div class="relative z-0 w-full mb-5 group">
+                    <input type="date" name="startDate" id="startDate"
+                        class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none dark:text-white dark:border-gray-600 dark:focus:border-blue-500 focus:outline-none focus:ring-0 focus:border-blue-600 peer"
+                        placeholder=" " required />
+                    <label for="startDate"
+                        class="peer-focus:font-medium absolute text-sm text-gray-500 dark:text-gray-400 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-blue-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">Start
+                        Date</label>
+                </div>
+
+                <div class="relative z-0 w-full mb-5 group">
+                    <input type="date" name="endDate" id="endDate"
+                        class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none dark:text-white dark:border-gray-600 dark:focus:border-blue-500 focus:outline-none focus:ring-0 focus:border-blue-600 peer"
+                        placeholder=" " required />
+                    <label for="endDate"
+                        class="peer-focus:font-medium absolute text-sm text-gray-500 dark:text-gray-400 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-blue-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">End
+                        Date</label>
+                </div>
+
+                <div class="relative z-0 w-full mb-5 group">
+                    <input type="date" name="expiryDate" id="expiryDate"
+                        class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none dark:text-white dark:border-gray-600 dark:focus:border-blue-500 focus:outline-none focus:ring-0 focus:border-blue-600 peer"
+                        placeholder=" " value=required />
+                    <label for="expiryDate"
+                        class="peer-focus:font-medium absolute text-sm text-gray-500 dark:text-gray-400 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-blue-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">Expiry
+                        Date</label>
+                </div>
+
+                <div class="relative z-0 w-full mb-5 group">
+                    <input type="number" name="remainingQty" id="remainingQty"
+                        class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none dark:text-white dark:border-gray-600 dark:focus:border-blue-500 focus:outline-none focus:ring-0 focus:border-blue-600 peer"
+                        placeholder=" " value=required />
+                    <label for="remainingQty"
+                        class="peer-focus:font-medium absolute text-sm text-gray-500 dark:text-gray-400 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-blue-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">Remaining
+                        Quantity</label>
+                </div>
+
+
+
+                <div class="relative z-0 w-full mb-5 group">
+                    <input type="number" name="containerNb" id="containerNb"
+                        class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none dark:text-white dark:border-gray-600 dark:focus:border-blue-500 focus:outline-none focus:ring-0 focus:border-blue-600 peer"
+                        placeholder=" " value=required />
+                    <label for="containerNb"
+                        class="peer-focus:font-medium absolute text-sm text-gray-500 dark:text-gray-400 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-blue-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">Container
+                        Number</label>
+                </div>
+
+            </div>
+
+        </div>
+        <div class="flex items-center justify-center">
+            <button type="submit"
+                class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm w-full sm:w-auto px-5 py-2.5 text-center">
+                Create Schedule
+            </button>
+        </div>
+    </form>
+
+
+</div>
+<script>
+    function setFrequency(value) {
+        const frequencyInput = document.getElementById("frequency");
+        if (value) {
+            frequencyInput.value = value;
+            frequencyInput.readOnly = true; // Prevent manual editing
+        } else {
+            frequencyInput.value = "";
+            frequencyInput.readOnly = false; // Allow custom input
+            frequencyInput.focus();
+        }
+    }
+</script>
+<script>
+    // Function to hide the row and mark it for deletion
+    function hideRow(index) {
+        // Hide the row
+        document.getElementById('schedule_property_' + index).style.display = 'none';
+
+        // Mark the row as deleted by setting the hidden input to 1
+        document.getElementById('delete_' + index).value = '1';
+    }
+</script>
+<script>
+    function addNewEntry() {
+        var container = document.getElementById("schedule_properties_container");
+        var index = container.children.length + 1; // New index for the new entry
+
+        var newRow = document.createElement('div');
+        newRow.classList.add('flex', 'w-full', 'mb-5', 'gap-4');
+        newRow.id = 'schedule_property_' + index;
+
+        newRow.innerHTML = `
+            <!-- Time Field -->
+            <div class="relative z-0 w-1/2 group">
+                <input type="time" name="time_${index}" id="time_${index}"
+                    class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none dark:text-white dark:border-gray-600 dark:focus:border-blue-500 focus:outline-none focus:ring-0 focus:border-blue-600 peer"
+                    placeholder=" " required />
+                <label for="time_${index}"
+                    class="peer-focus:font-medium absolute text-sm text-gray-500 dark:text-gray-400 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-blue-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
+                    Time
+                </label>
+            </div>
+    
+            <!-- Dose Field -->
+            <div class="relative z-0 w-1/2 group">
+                <input type="number" name="dose_${index}" id="dose_${index}"
+                    class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none dark:text-white dark:border-gray-600 dark:focus:border-blue-500 focus:outline-none focus:ring-0 focus:border-blue-600 peer"
+                    placeholder=" " required />
+                <label for="dose_${index}"
+                    class="peer-focus:font-medium absolute text-sm text-gray-500 dark:text-gray-400 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-blue-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
+                    Dose
+                </label>
+            </div>
+    
+            <!-- Delete Button -->
+            <div class="flex items-center justify-center">
+                <button type="button" onclick="hideRow('${index}');"
+                    class="text-white bg-red-500 hover:bg-red-700 rounded-md p-2">
+                    <i class="fas fa-trash-alt"></i>
+                </button>
+                <input type="hidden" name="delete_${index}" id="delete_${index}" value="0">
+            </div>
+        `;
+
+        container.appendChild(newRow);
+    }
+
+</script>
+<script>
+    // This function updates the checkboxes based on the selected frequency
+    function updateCheckboxes() {
+        const frequency = document.getElementById("frequency").value || 7;  // Default to 7 if empty
+        const container = document.getElementById("days-container");
+        container.innerHTML = '';  // Clear the existing checkboxes
+
+        let selectedDays = Array(frequency).fill(0);// Assuming 'schedule.day' is a list [1, 0, 1,...]
+
+        // Create the correct number of checkboxes based on the frequency
+        for (let i = 0; i < frequency; i++) {
+            const checkboxWrapper = document.createElement('div');
+            checkboxWrapper.classList.add('flex', 'flex-col', 'items-center');
+
+            const label = document.createElement('label');
+            label.setAttribute('for', `day${i}`);
+            label.classList.add('text-sm', 'text-gray-900', 'dark:text-gray-300');
+            label.textContent = `${i + 1}`;  // Display day number (no "Day" text)
+
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.name = `day_${i}`;
+            checkbox.id = `day${i}`;
+            checkbox.value = '1';
+            checkbox.classList.add('w-4', 'h-4', 'text-blue-600', 'bg-gray-100', 'border-gray-300', 'rounded', 'focus:ring-blue-500', 'dark:focus:ring-blue-600', 'dark:ring-offset-gray-800', 'dark:bg-gray-700', 'dark:border-gray-600');
+
+            // Check if this day is selected based on schedule.day array
+            if (selectedDays[i] === 1) {
+                checkbox.checked = true;
+            }
+
+            checkboxWrapper.appendChild(label);
+            checkboxWrapper.appendChild(checkbox);
+            container.appendChild(checkboxWrapper);
+        }
+    }
+
+    // Set frequency when the buttons are clicked
+    function setFrequency(freq) {
+        document.getElementById("frequency").value = freq;
+        updateCheckboxes();  // Call the function to update checkboxes
+    }
+
+    // Initialize the checkboxes when the page loads
+    window.onload = function () {
+        updateCheckboxes();  // Initialize with the current frequency
+    };
+</script>
+<script>
+    function searchPill() {
+        const pillInput = document.getElementById('pill').value;
+
+        if (pillInput.length < 1) {  // Trigger search only after at least 1 character
+            document.getElementById('search-results').innerHTML = '';
+            document.getElementById('search-results').classList.add('hidden');
+            return;
+        }
+
+        fetch(`/search_pill?pill=${pillInput}`)
+            .then(response => response.json())
+            .then(data => {
+                const resultsContainer = document.getElementById('search-results');
+                resultsContainer.innerHTML = ''; // Clear previous results
+                resultsContainer.classList.remove('hidden'); // Show results container
+
+                if (data.length > 0) {
+                    data.forEach(pill => {
+                        const pillItem = document.createElement('div');
+                        pillItem.classList.add('pill-item', 'w-full', 'cursor-pointer', 'py-2', 'px-4', 'text-sm', 'text-gray-900', 'hover:bg-blue-100', 'hover:text-blue-600', 'focus:outline-none');
+                        pillItem.textContent = `${pill.name} (${pill.shape})`;
+
+                        // Store the pill name and ID when clicked
+                        pillItem.onclick = function () {
+                            document.getElementById('pill').value = pill.name;  // Set input value
+                            document.getElementById('pill_id').value = pill.id; // Store pill ID in hidden field
+                            document.getElementById('search-results').innerHTML = ''; // Hide results after selection
+                            document.getElementById('search-results').classList.add('hidden'); // Hide results container
+                        };
+
+                        resultsContainer.appendChild(pillItem);
+                    });
+                } else {
+                    resultsContainer.innerHTML = '<div class="py-2 px-4 text-sm text-gray-600">No results found</div>';
+                }
+            })
+            .catch(error => console.error('Error fetching pills:', error));
+    }
+</script>
+
+
+{%endblock%}

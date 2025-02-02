@@ -1,5 +1,5 @@
-from flask import Blueprint, render_template, redirect, url_for, request, flash
-from models import User, Pill, Caregiver, Patient, PillSchedule
+from flask import Blueprint, render_template, redirect, url_for, request, flash, jsonify
+from models import User, Pill, Caregiver, Patient, PillSchedule, ScheduleProperty
 from app import db
 from flask_login import login_required, current_user
 
@@ -17,8 +17,18 @@ def home():
     return render_template("home.html", user=current_user.get_info())
 
 
-@main.route('/schedule/<int:patient_id>')
+@main.route('/createSchedule/<int:patient_id>')
 @login_required
+def createSchedule(patient_id):
+    if (current_user.get_info()['role'] != 'pharmacist') and (current_user.get_info()['role'] != 'caregiver'):
+        flash("You are not allowed to access this route")
+        return redirect(url_for('auth.login'))
+    patient_id = patient_id
+    return render_template('createSchedule.html', user=current_user.get_info(), patient_id=patient_id)
+
+
+@ main.route('/schedule/<int:patient_id>')
+@ login_required
 def schedule(patient_id):
     if (current_user.get_info()['role'] != 'pharmacist') and (current_user.get_info()['role'] != 'caregiver'):
         flash("You are not allowed to access this route")
@@ -35,13 +45,13 @@ def schedule(patient_id):
     return redirect(url_for('main.home'))
 
 
-@main.route('/editSchedule/<int:schedule_id>')
-@login_required
+@ main.route('/editSchedule/<int:schedule_id>')
+@ login_required
 def editSchedule(schedule_id):
     if (current_user.get_info()['role'] != 'pharmacist') and (current_user.get_info()['role'] != 'caregiver'):
         flash("You are not allowed to access this route")
         return redirect(url_for('auth.login'))
-    schedule = PillSchedule.query.filter_by(scheduleID=schedule_id).first()
+    schedule = PillSchedule.query.get_or_404(schedule_id)
     if schedule:
         return render_template('editSchedule.html', user=current_user.get_info(), schedule=schedule)
 
@@ -50,16 +60,113 @@ def editSchedule(schedule_id):
     return redirect(url_for('main.home'))
 
 
-@main.route('/createPill')
+@main.route('/createSchedule/<int:patient_id>', methods=['POST'])
 @login_required
+def createSchedule_post(patient_id):
+    if (current_user.get_info()['role'] != 'pharmacist') and (current_user.get_info()['role'] != 'caregiver'):
+        flash("You are not allowed to access this route")
+        return redirect(url_for('auth.login'))
+    schedule = PillSchedule()
+    patient = Patient.query.get_or_404(patient_id)
+    pillID = request.form.get('pill_id')
+    frequency = request.form.get('frequency')
+    selected_days = [0] * int(frequency)
+    # Loop through each checkbox and update the corresponding index to 1 if checked
+    for i in range(int(frequency)):
+        if f"day_{i}" in request.form:  # If the checkbox for that day is checked
+            selected_days[i] = 1
+    schedule.pillID = pillID
+    schedule.patientID = patient.patientID
+    schedule.startDate = request.form.get('startDate')
+    schedule.endDate = request.form.get('endDate')
+    schedule.expiryDate = request.form.get('expiryDate')
+    schedule.remainingQty = request.form.get('remainingQty')
+    schedule.containerNb = request.form.get('containerNb')
+    schedule.frequency = frequency
+    schedule.day = selected_days
+    db.session.add(schedule)
+    db.session.commit()
+    # Assuming only time and dose are part of the form
+    for index in range(0, len(request.form) // 2):
+        # Get the new time and dose fields
+        time = request.form.get(f'time_{index + 1}')
+        dose = request.form.get(f'dose_{index + 1}')
+
+        # If time or dose is provided, add a new schedule property
+        if time and dose:
+            new_schedule_property = ScheduleProperty(
+                time=time, dose=dose, scheduleID=schedule.scheduleID)
+            db.session.add(new_schedule_property)
+        db.session.commit()
+    return redirect(url_for('main.schedule', patient_id=patient_id))
+
+
+@ main.route('/editSchedule/<int:schedule_id>', methods=['POST'])
+@ login_required
+def editSchedule_post(schedule_id):
+    if (current_user.get_info()['role'] != 'pharmacist') and (current_user.get_info()['role'] != 'caregiver'):
+        flash("You are not allowed to access this route")
+        return redirect(url_for('auth.login'))
+    schedule = PillSchedule.query.get_or_404(schedule_id)
+    frequency = request.form.get('frequency')
+    selected_days = [0] * int(frequency)
+    # Loop through each checkbox and update the corresponding index to 1 if checked
+    for i in range(int(frequency)):
+        if f"day_{i}" in request.form:  # If the checkbox for that day is checked
+            selected_days[i] = 1
+    startDate = request.form.get('startDate')
+    endDate = request.form.get('endDate')
+    expiryDate = request.form.get('expiryDate')
+    remQty = request.form.get('remainingQty')
+    containerNb = request.form.get('containerNb')
+    schedule.frequency = frequency
+    schedule.day = selected_days
+    schedule.startDate = startDate
+    schedule.endDate = endDate
+    schedule.expiryDate = expiryDate
+    schedule.remainingQty = remQty
+    schedule.containerNb = containerNb
+
+    # Handle the schedule_properties (edit and delete)
+    for index, schedule_property in enumerate(schedule.schedule_properties):
+        # Check if the property is marked for deletion
+        delete_property = request.form.get(f'delete_{index + 1}')
+        if delete_property == '1':  # If marked for deletion
+            db.session.delete(schedule_property)
+        else:
+            # Otherwise, update the time and dose
+            time = request.form.get(f'time_{index + 1}')
+            dose = request.form.get(f'dose_{index + 1}')
+            schedule_property.time = time
+            schedule_property.dose = dose
+    max_index = len(schedule.schedule_properties)
+
+    # Assuming only time and dose are part of the form
+    for index in range(max_index, len(request.form) // 2):
+        # Get the new time and dose fields
+        time = request.form.get(f'time_{index + 1}')
+        dose = request.form.get(f'dose_{index + 1}')
+
+        # If time or dose is provided, add a new schedule property
+        if time and dose:
+            new_schedule_property = ScheduleProperty(
+                time=time, dose=dose, scheduleID=schedule.scheduleID)
+            db.session.add(new_schedule_property)
+        db.session.commit()
+    flash('The schedule has been updated')
+    return redirect(url_for('main.editSchedule', schedule_id=schedule_id))
+
+
+@ main.route('/createPill')
+@ login_required
 def createPill():
     if current_user.get_info()['role'] != 'pharmacist':
         return redirect(url_for('auth.login'))
     return render_template("createPill.html", user=current_user.get_info())
 
 
-@main.route('/viewPatients')
-@login_required
+@ main.route('/viewPatients')
+@ login_required
 def viewPatients():
     if current_user.get_info()['role'] != 'caregiver':
         return redirect(url_for('auth.login'))
@@ -67,8 +174,8 @@ def viewPatients():
     return render_template("viewPatients.html", user=current_user.get_info(), patients=caregiver.patients)
 
 
-@main.route('/assignCaregiver')
-@login_required
+@ main.route('/assignCaregiver')
+@ login_required
 def assignCaregiver():
     if current_user.get_info()['role'] != 'patient':
         flash('You need patient privileges!')
@@ -77,8 +184,8 @@ def assignCaregiver():
     return render_template("assignCaregiver.html", user=current_user.get_info(), caregiver=caregiver)
 
 
-@main.route('/assignCaregiver', methods=['POST'])
-@login_required
+@ main.route('/assignCaregiver', methods=['POST'])
+@ login_required
 def assignCaregiver_post():
     if current_user.get_info()['role'] != 'patient':
         flash('You need patient privileges!')
@@ -114,8 +221,8 @@ def assignCaregiver_post():
     return render_template("assignCaregiver.html", user=current_user.get_info(), caregiver=patient.caregiver)
 
 
-@main.route('/createPill', methods=['POST'])
-@login_required
+@ main.route('/createPill', methods=['POST'])
+@ login_required
 def createPill_post():
     if current_user.get_info()['role'] != 'pharmacist':
         return redirect(url_for('auth.login'))
@@ -128,3 +235,15 @@ def createPill_post():
     db.session.add(pill)
     db.session.commit()
     return render_template("createPill.html", user=current_user.get_info())
+
+
+@main.route('/search_pill')
+def search_pill():
+    pill_name = request.args.get('pill', '')
+    # Query the database for pills that match the name
+    pills = Pill.query.filter(Pill.name.ilike(f'%{pill_name}%')).all()
+    # Convert results to a list of dictionaries
+    result = [{'name': pill.name, 'id': pill.pillID, 'shape': pill.shape}
+              for pill in pills]
+
+    return jsonify(result)
