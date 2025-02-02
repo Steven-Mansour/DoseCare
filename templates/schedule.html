@@ -28,6 +28,13 @@
             <div class="text-md text-gray-600">{{ schedule.scheduleID }}</div>
         </div>
         {% endfor %}
+        <!-- Add New Schedule Button -->
+        <div class="flex justify-center mt-6">
+            <a href="{{ url_for('main.createSchedule', patient_id=patient.patientID) }}"
+                class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">
+                Add New Schedule
+            </a>
+        </div>
     </div>
 
 

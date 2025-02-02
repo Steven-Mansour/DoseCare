@@ -225,35 +225,34 @@
         const container = document.getElementById("days-container");
         container.innerHTML = '';  // Clear the existing checkboxes
 
-        const selectedDays = {{ schedule.day | tojson
-    }}; // Assuming 'schedule.day' is a list [1, 0, 1,...]
+        const selectedDays = JSON.parse('{{ schedule.day | tojson }}');// Assuming 'schedule.day' is a list [1, 0, 1,...]
 
-    // Create the correct number of checkboxes based on the frequency
-    for (let i = 0; i < frequency; i++) {
-        const checkboxWrapper = document.createElement('div');
-        checkboxWrapper.classList.add('flex', 'flex-col', 'items-center');
+        // Create the correct number of checkboxes based on the frequency
+        for (let i = 0; i < frequency; i++) {
+            const checkboxWrapper = document.createElement('div');
+            checkboxWrapper.classList.add('flex', 'flex-col', 'items-center');
 
-        const label = document.createElement('label');
-        label.setAttribute('for', `day${i}`);
-        label.classList.add('text-sm', 'text-gray-900', 'dark:text-gray-300');
-        label.textContent = `${i + 1}`;  // Display day number (no "Day" text)
+            const label = document.createElement('label');
+            label.setAttribute('for', `day${i}`);
+            label.classList.add('text-sm', 'text-gray-900', 'dark:text-gray-300');
+            label.textContent = `${i + 1}`;  // Display day number (no "Day" text)
 
-        const checkbox = document.createElement('input');
-        checkbox.type = 'checkbox';
-        checkbox.name = `day_${i}`;
-        checkbox.id = `day${i}`;
-        checkbox.value = '1';
-        checkbox.classList.add('w-4', 'h-4', 'text-blue-600', 'bg-gray-100', 'border-gray-300', 'rounded', 'focus:ring-blue-500', 'dark:focus:ring-blue-600', 'dark:ring-offset-gray-800', 'dark:bg-gray-700', 'dark:border-gray-600');
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.name = `day_${i}`;
+            checkbox.id = `day${i}`;
+            checkbox.value = '1';
+            checkbox.classList.add('w-4', 'h-4', 'text-blue-600', 'bg-gray-100', 'border-gray-300', 'rounded', 'focus:ring-blue-500', 'dark:focus:ring-blue-600', 'dark:ring-offset-gray-800', 'dark:bg-gray-700', 'dark:border-gray-600');
 
-        // Check if this day is selected based on schedule.day array
-        if (selectedDays[i] === 1) {
-            checkbox.checked = true;
+            // Check if this day is selected based on schedule.day array
+            if (selectedDays[i] === 1) {
+                checkbox.checked = true;
+            }
+
+            checkboxWrapper.appendChild(label);
+            checkboxWrapper.appendChild(checkbox);
+            container.appendChild(checkboxWrapper);
         }
-
-        checkboxWrapper.appendChild(label);
-        checkboxWrapper.appendChild(checkbox);
-        container.appendChild(checkboxWrapper);
-    }
     }
 
     // Set frequency when the buttons are clicked
