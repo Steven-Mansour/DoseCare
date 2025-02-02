@@ -1,6 +1,7 @@
 from app import db
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import UserMixin
+from sqlalchemy import JSON
 
 
 class User(db.Model, UserMixin):
@@ -75,7 +76,7 @@ class Pharmacy(db.Model):
 
 class PillSchedule(db.Model):
     scheduleID = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    day = db.Column(db.Integer, nullable=False)
+    day = db.Column(JSON, nullable=False)
     frequency = db.Column(db.Integer, nullable=False)
     startDate = db.Column(db.Date, nullable=False)
     endDate = db.Column(db.Date, nullable=False)

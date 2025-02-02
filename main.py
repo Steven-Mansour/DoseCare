@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, redirect, url_for, request, flash
-from models import User, Pill, Caregiver, Patient, PillSchedule
+from models import User, Pill, Caregiver, Patient, PillSchedule, ScheduleProperty
 from app import db
 from flask_login import login_required, current_user
 
@@ -41,13 +41,68 @@ def editSchedule(schedule_id):
     if (current_user.get_info()['role'] != 'pharmacist') and (current_user.get_info()['role'] != 'caregiver'):
         flash("You are not allowed to access this route")
         return redirect(url_for('auth.login'))
-    schedule = PillSchedule.query.filter_by(scheduleID=schedule_id).first()
+    schedule = PillSchedule.query.get_or_404(schedule_id)
     if schedule:
         return render_template('editSchedule.html', user=current_user.get_info(), schedule=schedule)
 
     else:
         flash("Schedule does not exist")
     return redirect(url_for('main.home'))
+
+
+@main.route('/editSchedule/<int:schedule_id>', methods=['POST'])
+@login_required
+def editSchedule_post(schedule_id):
+    if (current_user.get_info()['role'] != 'pharmacist') and (current_user.get_info()['role'] != 'caregiver'):
+        flash("You are not allowed to access this route")
+        return redirect(url_for('auth.login'))
+    schedule = PillSchedule.query.get_or_404(schedule_id)
+    frequency = request.form.get('frequency')
+    selected_days = [0] * int(frequency)
+    # Loop through each checkbox and update the corresponding index to 1 if checked
+    for i in range(int(frequency)):
+        if f"day_{i}" in request.form:  # If the checkbox for that day is checked
+            selected_days[i] = 1
+    startDate = request.form.get('startDate')
+    endDate = request.form.get('endDate')
+    expiryDate = request.form.get('expiryDate')
+    remQty = request.form.get('remainingQty')
+    containerNb = request.form.get('containerNb')
+    schedule.frequency = frequency
+    schedule.day = selected_days
+    schedule.startDate = startDate
+    schedule.endDate = endDate
+    schedule.expiryDate = expiryDate
+    schedule.remainingQty = remQty
+    schedule.containerNb = containerNb
+
+    # Handle the schedule_properties (edit and delete)
+    for index, schedule_property in enumerate(schedule.schedule_properties):
+        # Check if the property is marked for deletion
+        delete_property = request.form.get(f'delete_{index + 1}')
+        if delete_property == '1':  # If marked for deletion
+            db.session.delete(schedule_property)
+        else:
+            # Otherwise, update the time and dose
+            time = request.form.get(f'time_{index + 1}')
+            dose = request.form.get(f'dose_{index + 1}')
+            schedule_property.time = time
+            schedule_property.dose = dose
+    max_index = len(schedule.schedule_properties)
+
+    # Assuming only time and dose are part of the form
+    for index in range(max_index, len(request.form) // 2):
+        # Get the new time and dose fields
+        time = request.form.get(f'time_{index + 1}')
+        dose = request.form.get(f'dose_{index + 1}')
+
+        # If time or dose is provided, add a new schedule property
+        if time and dose:
+            new_schedule_property = ScheduleProperty(
+                time=time, dose=dose, scheduleID=schedule.scheduleID)
+            db.session.add(new_schedule_property)
+        db.session.commit()
+    return "hey"
 
 
 @main.route('/createPill')
