@@ -190,33 +190,16 @@ def assignCaregiver_post():
     if current_user.get_info()['role'] != 'patient':
         flash('You need patient privileges!')
         return redirect(url_for('auth.login'))
-    caregiverInfo = request.form.get('caregiver-info')
+    caregiverID = request.form.get('caregiverID')
+    caregiverName = request.form.get('caregiver-info')
+    if (not caregiverID):
+        flash("Caregiver does not exist")
+        return redirect(url_for('main.assignCaregiver'))
     user = current_user
     patient = user.patients[0]
-    if '@' in caregiverInfo:
-        caregiver_user = User.query.filter_by(email=caregiverInfo).first()
-        if caregiver_user:
-            caregiver = Caregiver.query.filter_by(
-                userID=caregiver_user.userID).first()
-            if caregiver:
-                flash(
-                    f"You have successfully assigned {caregiver.firstName} as your caregiver")
-                patient.caregiverID = caregiver.caregiverID
-                db.session.commit()
-            else:
-                flash(f"The user is not a caregiver")
-        else:
-            flash("No caregiver was found for the email provided")
-    else:
-        caregiver = Caregiver.query.filter_by(
-            caregiverID=caregiverInfo).first()
-        if caregiver:
-            flash(
-                f"You have successfully assigned {caregiver.firstName} as your caregiver")
-            patient.caregiverID = caregiver.caregiverID
-            db.session.commit()
-        else:
-            flash(f"The user is not a caregiver")
+    patient.caregiverID = caregiverID
+    db.session.commit()
+    flash(f"You have successfully assigned {caregiverName} as your caregiver")
 
     return render_template("assignCaregiver.html", user=current_user.get_info(), caregiver=patient.caregiver)
 
@@ -245,5 +228,29 @@ def search_pill():
     # Convert results to a list of dictionaries
     result = [{'name': pill.name, 'id': pill.pillID, 'shape': pill.shape}
               for pill in pills]
+
+    return jsonify(result)
+
+
+@main.route('/search_caregiver')
+@login_required
+def search_caregiver():
+    caregiver_name = request.args.get('name', '')  # Correct parameter name
+
+    if not caregiver_name:
+        return jsonify([])  # Return an empty list if no name is provided
+
+    # Query the database for caregivers that match the name (case-insensitive)
+    caregivers = Caregiver.query.filter(
+        (Caregiver.firstName.ilike(f'%{caregiver_name}%')) |
+        (Caregiver.lastName.ilike(f'%{caregiver_name}%'))
+    ).all()
+
+    # Convert results to a list of dictionaries
+    result = [{
+        'firstName': caregiver.firstName,
+        'lastName': caregiver.lastName,
+        'id': caregiver.caregiverID
+    } for caregiver in caregivers]
 
     return jsonify(result)
