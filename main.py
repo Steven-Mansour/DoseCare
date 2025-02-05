@@ -161,6 +161,7 @@ def editSchedule_post(schedule_id):
 @ login_required
 def createPill():
     if current_user.get_info()['role'] != 'pharmacist':
+        flash("This page requires pharmacist priveleges")
         return redirect(url_for('auth.login'))
     return render_template("createPill.html", user=current_user.get_info())
 
