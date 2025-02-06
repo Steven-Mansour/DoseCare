@@ -22,21 +22,41 @@
                             placeholder="name@company.com" required="">
                     </div>
                     <div>
-                        <label for="password"
-                            class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Password</label>
+                        <label for="password" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+                            Password
+                        </label>
                         <input type="password" name="password" id="password" placeholder="••••••••"
                             class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
                             required="">
+                        
+                        <div id="password-conditions" class="mt-2 hidden">
+                            <p id="length" class="flex items-center text-gray-900 dark:text-white">
+                                <span class="icon text-red-600">❌</span> <span>At least 6 characters</span>
+                            </p>
+                            <p id="uppercase" class="flex items-center text-gray-900 dark:text-white">
+                                <span class="icon text-red-600">❌</span> <span>At least 1 uppercase letter</span>
+                            </p>
+                            <p id="lowercase" class="flex items-center text-gray-900 dark:text-white">
+                                <span class="icon text-red-600">❌</span> <span>At least 1 lowercase letter</span>
+                            </p>
+                            <p id="number" class="flex items-center text-gray-900 dark:text-white">
+                                <span class="icon text-red-600">❌</span> <span>At least 1 number</span>
+                            </p>
+                            <p id="symbol" class="flex items-center text-gray-900 dark:text-white">
+                                <span class="icon text-red-600">❌</span> <span>At least 1 special character</span>
+                            </p>
+                        </div>
                     </div>
                     <div>
                         <label for="confirm-password"
                             class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Confirm
                             password</label>
-                        <input type="confirm-password" name="confirm-password" id="confirm-password"
+                        <input type="password" name="confirm-password" id="confirm-password"
                             placeholder="••••••••"
                             class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
                             required="">
                     </div>
+
                     <div>
                         <label for="role" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                             Select your role
@@ -166,5 +186,121 @@
                 </div>`;
         }
     });
+
+     // PASSWORD CONDITIONS CHECK
+     const passwordInput = document.getElementById('password');
+    const passwordConditions = document.getElementById('password-conditions');
+    const confirmPasswordInput = document.getElementById('confirm-password');
+    const confirmPasswordMessage = document.createElement('p'); // Create message element
+
+    confirmPasswordMessage.classList.add('mt-2', 'text-sm'); // Add styles
+    confirmPasswordInput.insertAdjacentElement('afterend', confirmPasswordMessage); // Insert below input
+
+    const conditions = {
+        length: document.getElementById('length'),
+        uppercase: document.getElementById('uppercase'),
+        lowercase: document.getElementById('lowercase'),
+        number: document.getElementById('number'),
+        symbol: document.getElementById('symbol')
+    };
+
+    const regexes = {
+        length: /.{6,}/,
+        uppercase: /[A-Z]/,
+        lowercase: /[a-z]/,
+        number: /\d/,
+        symbol: /[!@#$%^&*(),.?":{}|<>]/
+    };
+
+    // Check if all password conditions are met
+    function validatePassword() {
+        const password = passwordInput.value;
+        let allConditionsMet = true;
+
+        Object.keys(conditions).forEach(condition => {
+            const isValid = regexes[condition].test(password);
+            const conditionElement = conditions[condition];
+            const icon = conditionElement.querySelector('.icon');
+
+            icon.textContent = isValid ? '✅' : '❌';
+            icon.classList.toggle('text-green-600', isValid);
+            icon.classList.toggle('text-red-600', !isValid);
+
+            if (!isValid) allConditionsMet = false;
+        });
+
+        // Show required validation if conditions are not met
+        if (!allConditionsMet) {
+            passwordInput.setCustomValidity('Password does not meet all conditions.');
+        } else {
+            passwordInput.setCustomValidity('');
+        }
+
+        validateConfirmPassword(); // Re-check confirm password when main password changes
+    }
+
+    // Validate confirm password
+    function validateConfirmPassword() {
+        const password = passwordInput.value;
+        const confirmPassword = confirmPasswordInput.value;
+
+        if (!confirmPassword) {
+            confirmPasswordMessage.textContent = ''; // Hide message if empty
+            return;
+        }
+
+        if (password === confirmPassword) {
+            confirmPasswordMessage.textContent = '✅Passwords match';
+            confirmPasswordMessage.classList.remove('text-red-600');
+            confirmPasswordMessage.classList.add('text-green-600');
+        } else {
+            confirmPasswordMessage.textContent = '❌Passwords do not match';
+            confirmPasswordMessage.classList.remove('text-green-600');
+            confirmPasswordMessage.classList.add('text-red-600');
+        }
+
+        // Adapt to dark mode
+        confirmPasswordMessage.classList.toggle('text-gray-900', !document.documentElement.classList.contains('dark'));
+        confirmPasswordMessage.classList.toggle('text-white', document.documentElement.classList.contains('dark'));
+
+        
+        // // Show required validation if conditions are not met
+        // if (!(password === confirmPassword)) {
+        //     confirmPasswordInput.setCustomValidity('Passwords do not match');
+        // } else {
+        //     confirmPasswordInput.setCustomValidity('');
+        // }
+
+        // validatePassword(); // Re-check confirm password when main password changes
+    }
+
+    // Show password conditions when clicking on the password field
+    passwordInput.addEventListener('focus', () => {
+        passwordConditions.classList.remove('hidden');
+    });
+
+    // Hide password conditions when losing focus and field is empty
+    passwordInput.addEventListener('blur', () => {
+        if (!passwordInput.value) {
+            passwordConditions.classList.add('hidden');
+        }
+    });
+
+    // Attach validation to input events
+    passwordInput.addEventListener('input', validatePassword);
+    confirmPasswordInput.addEventListener('focus', validateConfirmPassword);
+    confirmPasswordInput.addEventListener('input', validateConfirmPassword);
+
+    // Validate the form before submission
+    const form = document.querySelector('form');
+    form.addEventListener('submit', (event) => {
+        // Prevent submission if password conditions or confirm password mismatch
+        if (passwordInput.validity.valueMissing || !passwordInput.checkValidity() || confirmPasswordInput.value !== passwordInput.value) {
+            event.preventDefault(); // Prevent form submission
+            alert("Please ensure all conditions are met and passwords match.");
+        }
+    });
+
+    
 </script>
 {% endblock %}
