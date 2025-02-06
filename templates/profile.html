@@ -1,0 +1,13 @@
+{%extends "homeTemplate.html"%}
+{% block title %}Profile{% endblock %}
+{%block pageContent%}
+
+<div class="flex flex-col h-screen items-center pt-20 h-48 mb-4 rounded-sm bg-gray-50 dark:bg-gray-800">
+    <div>{{user.email|capitalize}}</div>
+    <div> {{user.name|capitalize}}</div>
+    <div>{{user.role|capitalize}}</div>
+
+
+</div>
+
+{%endblock%}

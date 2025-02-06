@@ -10,27 +10,44 @@ main = Blueprint('main', __name__)
 
 @main.route('/')
 def index():
-    return "Logged in!"
+    return redirect(url_for('main.home'))
 
 
 @main.route('/home')
 @login_required
 def home():
-    return render_template("home.html", user=current_user.get_info())
+    return render_template("home.html", user=current_user.get_stats())
+
+
+@main.route('/profile')
+@login_required
+def profile():
+    return render_template("profile.html", user=current_user.get_info())
+# @main.route('/assignPharmacy')
+# @login_required
+# def assignPharmacy():
+#     if (current_user.get_info()['role'] != 'patient'):
+#         flash("You are not allowed to access this page")
+#         return redirect(url_for('main.home'))
+#     patient = current_user.get_info()['patientID']
+#     patient = Patient.query.first_or_404(patient)
+#     pharmacy = patient.pharmacy
+#     return render_template("assignPharmacy.html", user=current_user.get_info(), pharmacy=pharmacy)
 
 
 @main.route('/viewCalendar/<int:patient_id>')
 @login_required
 def viewCalendar(patient_id):
-    if (current_user.get_info()['role'] != 'patient'):
+    if (current_user.get_info()['role'] != 'patient' and current_user.get_info()['role'] != 'caregiver'):
         flash("You are not allowed to access this page")
         return redirect(url_for('main.home'))
-    current_year = datetime.now().year
     patient = Patient.query.filter_by(patientID=patient_id).first()
+    if (current_user.get_info()['role'] == 'caregiver'):
+        if (patient.caregiverID != current_user.get_info()['caregiverID']):
+            flash("You cannot access this patients data")
+            return redirect(url_for('main.home'))
+    current_year = datetime.now().year
     monthlySched = patient.get_monthly_schedule()
-    # current_month = datetime.now().month
-    # month_name = calendar.month_name[current_month]
-    # cal = calendar.Calendar().monthdayscalendar(current_year, current_month)
     return render_template("calendar.html", user=current_user.get_info(),
                            cal=monthlySched["cal"],
                            year=monthlySched["current_year"],
