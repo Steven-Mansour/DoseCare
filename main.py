@@ -2,6 +2,8 @@ from flask import Blueprint, render_template, redirect, url_for, request, flash,
 from models import User, Pill, Caregiver, Patient, PillSchedule, ScheduleProperty
 from app import db
 from flask_login import login_required, current_user
+from datetime import datetime, timedelta
+import calendar
 
 main = Blueprint('main', __name__)
 
@@ -15,6 +17,25 @@ def index():
 @login_required
 def home():
     return render_template("home.html", user=current_user.get_info())
+
+
+@main.route('/viewCalendar/<int:patient_id>')
+@login_required
+def viewCalendar(patient_id):
+    if (current_user.get_info()['role'] != 'patient'):
+        flash("You are not allowed to access this page")
+        return redirect(url_for('main.home'))
+    current_year = datetime.now().year
+    patient = Patient.query.filter_by(patientID=patient_id).first()
+    monthlySched = patient.get_monthly_schedule()
+    # current_month = datetime.now().month
+    # month_name = calendar.month_name[current_month]
+    # cal = calendar.Calendar().monthdayscalendar(current_year, current_month)
+    return render_template("calendar.html", user=current_user.get_info(),
+                           cal=monthlySched["cal"],
+                           year=monthlySched["current_year"],
+                           month=monthlySched["month_name"],
+                           daily_pills=monthlySched["daily_pills"])
 
 
 @main.route('/createSchedule/<int:patient_id>')

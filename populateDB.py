@@ -66,10 +66,10 @@ with create_app().app_context():
     db.session.commit()
 
     # Create Pill Schedule
-    schedule1 = PillSchedule(day=[1], frequency=3, startDate='2025-01-01', endDate='2025-02-01', remainingQty=30, expiryDate='2025-12-31',
+    schedule1 = PillSchedule(day=[1, 1, 0], frequency=3, startDate='2025-01-01', endDate='2025-02-01', remainingQty=30, expiryDate='2025-12-31',
                              containerNb=1, patientID=patient1.patientID, caregiverID=caregiver1.caregiverID, pharmacyID=pharmacy1.pharmacyID, pillID=pill1.pillID)
 
-    schedule2 = PillSchedule(day=[1], frequency=3, startDate='2025-01-01', endDate='2025-02-01', remainingQty=30, expiryDate='2025-12-31',
+    schedule2 = PillSchedule(day=[1, 0, 1], frequency=3, startDate='2025-01-01', endDate='2025-02-01', remainingQty=30, expiryDate='2025-12-31',
                              containerNb=1, patientID=patient2.patientID, caregiverID=caregiver2.caregiverID, pharmacyID=pharmacy2.pharmacyID, pillID=pill1.pillID)
 
     db.session.add_all([schedule1, schedule2])

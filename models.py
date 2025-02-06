@@ -1,7 +1,10 @@
 from app import db
+from flask import jsonify
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import UserMixin
 from sqlalchemy import JSON
+from datetime import datetime, timedelta
+import calendar
 
 
 class User(db.Model, UserMixin):
@@ -25,12 +28,11 @@ class User(db.Model, UserMixin):
     def get_info(self):
         """Check if the user is a patient, caregiver, or pharmacist and return a dictionary."""
         if self.patients:  # Checks if the user has an associated patient record
-            return {"role": "patient", "name": self.patients[0].firstName}
+            return {"role": "patient", "name": self.patients[0].firstName, "patientID": self.patients[0].patientID}
         elif self.caregivers:  # Checks if the user has an associated caregiver record
-            return {"role": "caregiver", "name": self.caregivers[0].firstName}
+            return {"role": "caregiver", "name": self.caregivers[0].firstName, "caregiverID": self.caregivers[0].caregiverID}
         elif self.pharmacies:  # Checks if the user has an associated pharmacy record
-            return {"role": "pharmacist", "name": self.pharmacies[0].name}
-
+            return {"role": "pharmacist", "name": self.pharmacies[0].name, "pharmacyID": self.pharmacies[0].pharmacyID}
         # If the user doesn't belong to any category
         return {"role": "unknown", "name": "N/A"}
 
@@ -60,6 +62,40 @@ class Patient(db.Model):
     # Define relationships with User and Caregiver
     caregiver = db.relationship('Caregiver', backref='patients', lazy=True)
     user = db.relationship('User', backref='patients', lazy=True)
+
+    def get_monthly_schedule(self):
+        current_year = datetime.now().year
+        current_month = datetime.now().month
+        month_name = calendar.month_name[current_month]
+        cal = calendar.Calendar().monthdayscalendar(current_year, current_month)
+        daily_pills = {day: [] for week in cal for day in week if day != 0}
+        schedules = self.pill_schedules
+        for schedule in schedules:
+            start_date = schedule.startDate
+            end_date = schedule.endDate
+            frequency = schedule.frequency
+            days = schedule.day
+
+            for week in cal:
+                for day in week:
+                    # Skip days that don't exist in the current month (0 means no day in this slot)
+                    if day == 0:
+                        continue
+                    current_date = datetime(current_year, current_month, day)
+                    if start_date <= current_date.date() <= end_date:
+                        date_difference = current_date.date() - start_date
+                        days_difference = date_difference.days
+                        if days[days_difference % frequency == 1]:
+                            if schedule.pill.name not in daily_pills[current_date.day]:
+                                daily_pills[current_date.day].append(
+                                    schedule.pill.name)
+
+        return {
+            "cal": cal,
+            "current_year": current_year,
+            "month_name": month_name,
+            "daily_pills": daily_pills
+        }
 
 
 class Pharmacy(db.Model):
