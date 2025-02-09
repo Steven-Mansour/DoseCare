@@ -28,11 +28,22 @@ class User(db.Model, UserMixin):
     def get_info(self):
         """Check if the user is a patient, caregiver, or pharmacist and return a dictionary."""
         if self.patients:  # Checks if the user has an associated patient record
-            return {"role": "patient", "name": self.patients[0].firstName, "patientID": self.patients[0].patientID}
+            return {"role": "patient", "name": self.patients[0].firstName, "patientID": self.patients[0].patientID, "email": self.email, }
         elif self.caregivers:  # Checks if the user has an associated caregiver record
-            return {"role": "caregiver", "name": self.caregivers[0].firstName, "caregiverID": self.caregivers[0].caregiverID}
+            return {"role": "caregiver", "name": self.caregivers[0].firstName, "caregiverID": self.caregivers[0].caregiverID, "email": self.email, }
         elif self.pharmacies:  # Checks if the user has an associated pharmacy record
-            return {"role": "pharmacist", "name": self.pharmacies[0].name, "pharmacyID": self.pharmacies[0].pharmacyID}
+            return {"role": "pharmacist", "name": self.pharmacies[0].name, "pharmacyID": self.pharmacies[0].pharmacyID, "email": self.email, }
+        # If the user doesn't belong to any category
+        return {"role": "unknown", "name": "N/A"}
+
+    def get_stats(self):
+        """Check if the user is a patient, caregiver, or pharmacist and return a dictionary."""
+        if self.patients:  # Checks if the user has an associated patient record
+            return {"role": "patient", "name": self.patients[0].firstName, "patientID": self.patients[0].patientID, "email": self.email,  "patient": self.patients[0], "caregiver": self.patients[0].caregiver}
+        elif self.caregivers:  # Checks if the user has an associated caregiver record
+            return {"role": "caregiver", "name": self.caregivers[0].firstName, "caregiverID": self.caregivers[0].caregiverID, "email": self.email, "caregiver": self.caregivers[0]}
+        elif self.pharmacies:  # Checks if the user has an associated pharmacy record
+            return {"role": "pharmacist", "name": self.pharmacies[0].name, "pharmacyID": self.pharmacies[0].pharmacyID, "email": self.email, "pharmacy": self.pharmacies[0]}
         # If the user doesn't belong to any category
         return {"role": "unknown", "name": "N/A"}
 

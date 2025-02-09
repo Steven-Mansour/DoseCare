@@ -3,34 +3,53 @@ from models import User, Pill, Caregiver, Patient, PillSchedule, SchedulePropert
 from app import db
 from flask_login import login_required, current_user
 from datetime import datetime, timedelta
-import calendar
+from messages import sendMessage
+
 
 main = Blueprint('main', __name__)
 
 
 @main.route('/')
 def index():
-    return "Logged in!"
+
+    return redirect(url_for('main.home'))
 
 
 @main.route('/home')
 @login_required
 def home():
-    return render_template("home.html", user=current_user.get_info())
+    return render_template("home.html", user=current_user.get_stats())
+
+
+@main.route('/profile')
+@login_required
+def profile():
+    return render_template("profile.html", user=current_user.get_info())
+# @main.route('/assignPharmacy')
+# @login_required
+# def assignPharmacy():
+#     if (current_user.get_info()['role'] != 'patient'):
+#         flash("You are not allowed to access this page")
+#         return redirect(url_for('main.home'))
+#     patient = current_user.get_info()['patientID']
+#     patient = Patient.query.first_or_404(patient)
+#     pharmacy = patient.pharmacy
+#     return render_template("assignPharmacy.html", user=current_user.get_info(), pharmacy=pharmacy)
 
 
 @main.route('/viewCalendar/<int:patient_id>')
 @login_required
 def viewCalendar(patient_id):
-    if (current_user.get_info()['role'] != 'patient'):
+    if (current_user.get_info()['role'] != 'patient' and current_user.get_info()['role'] != 'caregiver'):
         flash("You are not allowed to access this page")
         return redirect(url_for('main.home'))
-    current_year = datetime.now().year
     patient = Patient.query.filter_by(patientID=patient_id).first()
+    if (current_user.get_info()['role'] == 'caregiver'):
+        if (patient.caregiverID != current_user.get_info()['caregiverID']):
+            flash("You cannot access this patients data")
+            return redirect(url_for('main.home'))
+    current_year = datetime.now().year
     monthlySched = patient.get_monthly_schedule()
-    # current_month = datetime.now().month
-    # month_name = calendar.month_name[current_month]
-    # cal = calendar.Calendar().monthdayscalendar(current_year, current_month)
     return render_template("calendar.html", user=current_user.get_info(),
                            cal=monthlySched["cal"],
                            year=monthlySched["current_year"],
@@ -48,8 +67,8 @@ def createSchedule(patient_id):
     return render_template('createSchedule.html', user=current_user.get_info(), patient_id=patient_id)
 
 
-@ main.route('/schedule/<int:patient_id>')
-@ login_required
+@main.route('/schedule/<int:patient_id>')
+@login_required
 def schedule(patient_id):
     if (current_user.get_info()['role'] != 'pharmacist') and (current_user.get_info()['role'] != 'caregiver'):
         flash("You are not allowed to access this route")
@@ -66,8 +85,8 @@ def schedule(patient_id):
     return redirect(url_for('main.home'))
 
 
-@ main.route('/editSchedule/<int:schedule_id>')
-@ login_required
+@main.route('/editSchedule/<int:schedule_id>')
+@login_required
 def editSchedule(schedule_id):
     if (current_user.get_info()['role'] != 'pharmacist') and (current_user.get_info()['role'] != 'caregiver'):
         flash("You are not allowed to access this route")
@@ -122,8 +141,8 @@ def createSchedule_post(patient_id):
     return redirect(url_for('main.schedule', patient_id=patient_id))
 
 
-@ main.route('/editSchedule/<int:schedule_id>', methods=['POST'])
-@ login_required
+@main.route('/editSchedule/<int:schedule_id>', methods=['POST'])
+@login_required
 def editSchedule_post(schedule_id):
     if (current_user.get_info()['role'] != 'pharmacist') and (current_user.get_info()['role'] != 'caregiver'):
         flash("You are not allowed to access this route")
@@ -178,8 +197,8 @@ def editSchedule_post(schedule_id):
     return redirect(url_for('main.editSchedule', schedule_id=schedule_id))
 
 
-@ main.route('/createPill')
-@ login_required
+@main.route('/createPill')
+@login_required
 def createPill():
     if current_user.get_info()['role'] != 'pharmacist':
         flash("This page requires pharmacist priveleges")
@@ -187,8 +206,8 @@ def createPill():
     return render_template("createPill.html", user=current_user.get_info())
 
 
-@ main.route('/viewPatients')
-@ login_required
+@main.route('/viewPatients')
+@login_required
 def viewPatients():
     if current_user.get_info()['role'] != 'caregiver':
         return redirect(url_for('auth.login'))
@@ -196,8 +215,8 @@ def viewPatients():
     return render_template("viewPatients.html", user=current_user.get_info(), patients=caregiver.patients)
 
 
-@ main.route('/assignCaregiver')
-@ login_required
+@main.route('/assignCaregiver')
+@login_required
 def assignCaregiver():
     if current_user.get_info()['role'] != 'patient':
         flash('You need patient privileges!')
@@ -206,8 +225,8 @@ def assignCaregiver():
     return render_template("assignCaregiver.html", user=current_user.get_info(), caregiver=caregiver)
 
 
-@ main.route('/assignCaregiver', methods=['POST'])
-@ login_required
+@main.route('/assignCaregiver', methods=['POST'])
+@login_required
 def assignCaregiver_post():
     if current_user.get_info()['role'] != 'patient':
         flash('You need patient privileges!')
@@ -226,8 +245,8 @@ def assignCaregiver_post():
     return render_template("assignCaregiver.html", user=current_user.get_info(), caregiver=patient.caregiver)
 
 
-@ main.route('/createPill', methods=['POST'])
-@ login_required
+@main.route('/createPill', methods=['POST'])
+@login_required
 def createPill_post():
     if current_user.get_info()['role'] != 'pharmacist':
         return redirect(url_for('auth.login'))
