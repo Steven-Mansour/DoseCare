@@ -2,182 +2,229 @@
 {% block title %}Home{% endblock %}
 
 {%block pageContent%}
-<div class="grid grid-cols-2 {%if user.role == 'patient'%} grid-cols-3 {%endif%} gap-4 mb-4">
-    <div
-        class="flex text-lg items-center justify-center h-24 p-4 rounded-sm bg-gray-50 dark:bg-gray-800 dark:text-white">
-        <p class="text-xl text-blue-700 dark:text-gray-300">
-            Welcome <b>{{user.name|capitalize}}!</b>
-        </p>
-    </div>
-    <div class="flex items-center justify-center h-24 rounded-sm bg-gray-50 dark:bg-gray-800">
-        <p class="text-xl text-blue-700 dark:text-gray-300">
-            Role: <b>{{user.role|capitalize}}</b>
-        </p>
+<div class="min-h-screen h-fit">
+    <div class="grid grid-cols-2 {%if user.role == 'patient'%} grid-cols-3 {%endif%} gap-4 mb-4">
+        <div
+            class="flex text-lg items-center justify-center h-24 p-4 rounded-sm bg-gray-50 dark:bg-gray-800 dark:text-white">
+            <p class="text-xl text-blue-700 dark:text-gray-300">
+                Welcome <b>{{user.name|capitalize}}!</b>
+            </p>
+        </div>
+        <div class="flex items-center justify-center h-24 rounded-sm bg-gray-50 dark:bg-gray-800">
+            <p class="text-xl text-blue-700 dark:text-gray-300">
+                Role: <b>{{user.role|capitalize}}</b>
+            </p>
+        </div>
+        {%if user.role == 'patient'%}
+        <div class="flex items-center justify-center h-24 rounded-sm bg-gray-50 dark:bg-gray-800">
+            <p class="ml-2 text-lg text-blue-700 dark:text-gray-300">
+                Your caregiver: <b>{{user.caregiver.firstName|capitalize}} {{user.caregiver.lastName|capitalize}}</b>
+            </p>
+        </div>
+        {%endif%}
     </div>
     {%if user.role == 'patient'%}
-    <div class="flex items-center justify-center h-24 rounded-sm bg-gray-50 dark:bg-gray-800">
-        <p class="ml-2 text-lg text-blue-700 dark:text-gray-300">
-            Your caregiver: <b>{{user.caregiver.firstName|capitalize}} {{user.caregiver.lastName|capitalize}}</b>
-        </p>
-    </div>
-    {%endif%}
-</div>
-{%if user.role == 'patient'%}
-<div class="flex items-center bg-gray-100 justify-center h-48 mb-4 rounded-sm  dark:bg-gray-800">
-    <div class="flex flex-col gap-y-2 items-center justify-center ml-2 text-2xl text-gray-400  dark:text-gray-600">
+    <div class="flex items-center bg-gray-100 justify-center h-48 mb-4 rounded-sm  dark:bg-gray-800">
+        <div class="flex flex-col gap-y-2 items-center justify-center ml-2 text-2xl text-gray-400  dark:text-gray-600">
 
-        <div class="flex items-center flex-col justify-center text-2xl text-blue-700  dark:text-gray-300">
-            Today's next dose is scheduled in: <div class="countdown text-4xl font-bold dark:text-blue-700"
-                id="countdown"></div>
+            {%if not user.nextDose%}
+            <div class="flex items-center flex-col justify-center text-2xl text-blue-700  dark:text-gray-300">
+                No more pills scheduled today!</div>
+            {%else%}
+            <div class="flex items-center flex-col justify-center text-2xl text-blue-700  dark:text-gray-300">
+                Today's next dose is scheduled in: <div class="countdown text-4xl font-bold dark:text-blue-700"
+                    id="countdown"></div>
+                {%endif%}
+
+                {%for entry in user.nextDose%}
+                {%if loop.index == 1 %}
+                <div class="hidden" id="countdown-val">{{entry["prop"].time}}</div>
+                {%endif%}
+                {{entry["pill"]}} {% if not loop.last %}&#8226;{% endif %}
+                {%endfor%}
+
+            </div>
+        </div>
+        <!-- <div class="flex items-center flex-col  justify-center h-48 mb-4 rounded-sm bg-gray-50 dark:bg-gray-800">
+        <div class="mb-2 text-gray-600 dark:text-gray-300"> Your dispenser's containers: </div>
+        <table
+            class=" dark:text-blue-300 text-blue-700 rounded-md table-auto overflow-hidden w-3/4 border-collapse text-center border border-gray-300">
+            <thead>
+                <tr class="bg-gray-200 dark:bg-blue-600 text-blue-800 dark:text-gray-200">
+                    <th class="p-2 border border-gray-300 ">Container</th>
+                    {% for container in user.remQty %}
+                    <th class="p-2 border border-gray-300">{{ container.container }}</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="p-2 border border-gray-300 font-bold">Pill</td>
+                    {% for container in user.remQty %}
+                    <td class="p-2 border border-gray-300">{{ container.pill }}</td>
+                    {% endfor %}
+                </tr>
+                <tr>
+                    <td class="p-2 border border-gray-300 font-bold">Remaining Quantity</td>
+                    {% for container in user.remQty %}
+                    <td class="p-2 border border-gray-300">{{ container.qty }}</td>
+                    {% endfor %}
+                </tr>
+
+            </tbody>
+        </table>
+    </div> -->
+        <div class="overflow-x-auto rounded-sm bg-gray-50 dark:bg-gray-800 p-4 mb-4 max-w-2xl mx-auto">
+            <div class="text-lg font-semibold text-blue-700 dark:text-blue-400 text-center mb-2">
+                Your Dispenser's Containers Statuses:
+            </div>
+            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                <thead class="bg-blue-700 text-left dark:bg-blue-900">
+                    <tr>
+                        <th scope="col" class="px-6 py-3  text-xs font-medium text-white uppercase tracking-wider">
+                            Container
+                        </th>
+                        <th scope="col" class="px-6 py-3  text-xs font-medium text-white uppercase tracking-wider">
+                            Pill
+                        </th>
+                        <th scope="col" class="px-6 py-3  text-xs font-medium text-white uppercase tracking-wider">
+                            Remaining Quantity
+                        </th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white text-left divide-y divide-gray-200 dark:bg-gray-800 dark:divide-gray-700">
+                    {% for entry in user.remQty %}
+                    <tr>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">
+                            {{ entry.container }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
+                            {{ entry.pill }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
+                            {{ entry.qty }}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {%endif%}
+
+        {%if user.role == 'caregiver'%}
+        <div class="flex items-center bg-gray-100 justify-center h-48 mb-4 rounded-sm  dark:bg-gray-800">
+            <div class=" text-center  ml-2 text-2xl text-blue-800  dark:text-blue-600">
+                You are currently supervising <b>{{ user.nbOfPatients }}</b> {{ 'patient' if user.nbOfPatients == 1 else
+                'patients' }}.
+            </div>
+        </div>
+        <div class="overflow-x-auto rounded-sm bg-gray-50 dark:bg-gray-800 p-4 mb-4 max-w-2xl mx-auto">
+            <div class="text-lg font-semibold text-blue-700 dark:text-blue-400 text-center mb-2">
+                Patients' Schedules Nearing Completion
+            </div>
+            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                <thead class="bg-blue-700 dark:bg-blue-900">
+                    <tr>
+                        <th scope="col"
+                            class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
+                            Patient Name
+                        </th>
+                        <th scope="col"
+                            class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
+                            End Date
+                        </th>
+                        <th scope="col"
+                            class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
+                            Pill Name
+                        </th>
+                        <th scope="col"
+                            class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
+                            Days Remaining
+                        </th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200 dark:bg-gray-800 dark:divide-gray-700">
+                    {% for patient, schedule, days in user.patientsEndingSchedules %}
+                    <tr>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">
+                            {{ patient.firstName }} {{ patient.lastName }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
+                            {{ schedule.endDate }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
+                            {{ schedule.pill.name }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
+                            {{ days if days >= 0 else "Ended {} {}".format(-days, "day ago" if days == -1 else "days
+                            ago") }}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
 
-        {%for entry in user.nextDose%}
-        {%if loop.index == 1 %}
-        <div class="hidden" id="countdown-val">{{entry["prop"].time}}</div>
+
         {%endif%}
-        {{entry["pill"]}} {% if not loop.last %}&#8226;{% endif %}
-        {%endfor%}
 
+        <div class="grid grid-cols-2 gap-4 mb-4">
+
+            <div class="flex items-center justify-center rounded-sm bg-gray-50 h-28 dark:bg-gray-800">
+                <p class="text-2xl text-gray-400 dark:text-gray-500">
+                    <svg class="w-3.5 h-3.5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none"
+                        viewBox="0 0 18 18">
+                        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9 1v16M1 9h16" />
+                    </svg>
+                </p>
+            </div>
+            <div class="flex items-center justify-center rounded-sm bg-gray-50 h-28 dark:bg-gray-800">
+                <p class="text-2xl text-gray-400 dark:text-gray-500">
+                    <svg class="w-3.5 h-3.5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none"
+                        viewBox="0 0 18 18">
+                        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9 1v16M1 9h16" />
+                    </svg>
+                </p>
+            </div>
+        </div>
     </div>
-</div>
-<div class="flex items-center flex-col  justify-center h-48 mb-4 rounded-sm bg-gray-50 dark:bg-gray-800">
-    <div class="mb-2 text-gray-600 dark:text-gray-300"> Your dispenser's containers: </div>
-    <table
-        class=" dark:text-blue-300 text-blue-700 rounded-md table-auto overflow-hidden w-3/4 border-collapse text-center border border-gray-300">
-        <thead>
-            <tr class="bg-gray-200 dark:bg-blue-600 text-blue-800 dark:text-gray-200">
-                <th class="p-2 border border-gray-300 ">Container</th>
-                {% for container in user.remQty %}
-                <th class="p-2 border border-gray-300">{{ container.container }}</th>
-                {% endfor %}
-            </tr>
-        </thead>
-        <tbody>
-            <tr>
-                <td class="p-2 border border-gray-300 font-bold">Pill</td>
-                {% for container in user.remQty %}
-                <td class="p-2 border border-gray-300">{{ container.pill }}</td>
-                {% endfor %}
-            </tr>
-            <tr>
-                <td class="p-2 border border-gray-300 font-bold">Remaining Quantity</td>
-                {% for container in user.remQty %}
-                <td class="p-2 border border-gray-300">{{ container.qty }}</td>
-                {% endfor %}
-            </tr>
 
-        </tbody>
-    </table>
-</div>
-{%endif%}
+    <script>
+        // Example next dose time (next dose at 10:30 AM)
+        const nextDoseTimeStr = document.getElementById("countdown-val").textContent.trim(); // Jinja or any other template variable
+        const nextDoseTimeParts = nextDoseTimeStr.split(':'); // Split time into hours and minutes
+        const nextDoseTime = new Date();
 
-{%if user.role == 'caregiver'%}
-<div class="flex items-center bg-gray-100 justify-center h-48 mb-4 rounded-sm  dark:bg-gray-800">
-    <div class=" text-center  ml-2 text-2xl text-blue-800  dark:text-blue-600">
-        You are currently supervising <b>{{ user.nbOfPatients }}</b> {{ 'patient' if user.nbOfPatients == 1 else
-        'patients' }}.
-    </div>
-</div>
-<div class="overflow-x-auto rounded-sm bg-gray-50 dark:bg-gray-800 p-4 mb-4 max-w-2xl mx-auto">
-    <div class="text-lg font-semibold text-blue-700 dark:text-blue-400 text-center mb-2">
-        Patient Schedules Nearing Completion
-    </div>
-    <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-        <thead class="bg-blue-700 dark:bg-blue-900">
-            <tr>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
-                    Patient Name
-                </th>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
-                    End Date
-                </th>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
-                    Pill Name
-                </th>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
-                    Days Remaining
-                </th>
-            </tr>
-        </thead>
-        <tbody class="bg-white divide-y divide-gray-200 dark:bg-gray-800 dark:divide-gray-700">
-            {% for patient, schedule, days in user.patientsEndingSchedules %}
-            <tr>
-                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">
-                    {{ patient.firstName }} {{ patient.lastName }}
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
-                    {{ schedule.endDate }}
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
-                    {{ schedule.pill.name }}
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
-                    {{ days if days >= 0 else "Ended {} {}".format(-days, "day ago" if days == -1 else "days ago") }}
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</div>
+        // Set the time based on the backend value (next dose time)
+        nextDoseTime.setHours(nextDoseTimeParts[0], nextDoseTimeParts[1], 0, 0);
 
+        // Function to update the countdown
+        function updateCountdown() {
+            const now = new Date();
+            let timeDiff = nextDoseTime - now; // Time difference in milliseconds
 
-{%endif%}
+            // If timeDiff is negative, the dose time has passed today, set for the next day
+            if (timeDiff < 0) {
+                nextDoseTime.setDate(nextDoseTime.getDate() + 1); // Set for the next day
+                timeDiff = nextDoseTime - now; // Recalculate the time difference
+            }
 
-<div class="grid grid-cols-2 gap-4 mb-4">
+            // Calculate hours, minutes, and seconds
+            const hours = Math.floor(timeDiff / (1000 * 60 * 60));
+            const minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((timeDiff % (1000 * 60)) / 1000);
 
-    <div class="flex items-center justify-center rounded-sm bg-gray-50 h-28 dark:bg-gray-800">
-        <p class="text-2xl text-gray-400 dark:text-gray-500">
-            <svg class="w-3.5 h-3.5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none"
-                viewBox="0 0 18 18">
-                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M9 1v16M1 9h16" />
-            </svg>
-        </p>
-    </div>
-    <div class="flex items-center justify-center rounded-sm bg-gray-50 h-28 dark:bg-gray-800">
-        <p class="text-2xl text-gray-400 dark:text-gray-500">
-            <svg class="w-3.5 h-3.5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none"
-                viewBox="0 0 18 18">
-                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M9 1v16M1 9h16" />
-            </svg>
-        </p>
-    </div>
-</div>
-<script>
-    // Example next dose time (next dose at 10:30 AM)
-    const nextDoseTimeStr = document.getElementById("countdown-val").textContent.trim(); // Jinja or any other template variable
-    const nextDoseTimeParts = nextDoseTimeStr.split(':'); // Split time into hours and minutes
-    const nextDoseTime = new Date();
+            // Display the countdown
+            document.getElementById("countdown").textContent =
+                `${hours}h ${minutes}m ${seconds}s`;
 
-    // Set the time based on the backend value (next dose time)
-    nextDoseTime.setHours(nextDoseTimeParts[0], nextDoseTimeParts[1], 0, 0);
-
-    // Function to update the countdown
-    function updateCountdown() {
-        const now = new Date();
-        let timeDiff = nextDoseTime - now; // Time difference in milliseconds
-
-        // If timeDiff is negative, the dose time has passed today, set for the next day
-        if (timeDiff < 0) {
-            nextDoseTime.setDate(nextDoseTime.getDate() + 1); // Set for the next day
-            timeDiff = nextDoseTime - now; // Recalculate the time difference
+            // Update every second
+            setTimeout(updateCountdown, 1000);
         }
 
-        // Calculate hours, minutes, and seconds
-        const hours = Math.floor(timeDiff / (1000 * 60 * 60));
-        const minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
-        const seconds = Math.floor((timeDiff % (1000 * 60)) / 1000);
-
-        // Display the countdown
-        document.getElementById("countdown").textContent =
-            `${hours}h ${minutes}m ${seconds}s`;
-
-        // Update every second
-        setTimeout(updateCountdown, 1000);
-    }
-
-    // Start the countdown
-    updateCountdown();
-</script>
-{%endblock%}
+        // Start the countdown
+        updateCountdown();
+    </script>
+    {%endblock%}

@@ -69,17 +69,26 @@ class Caregiver(db.Model):
         patient_end_times = []
 
         for patient in self.patients:
+            # Ensure schedules have valid end dates
             schedules = [
-                schedule for schedule in patient.pill_schedules]
+                s for s in patient.pill_schedules if s.endDate is not None]
             if not schedules:
                 continue
+
+            # Get the schedule with the earliest end date
             earliest_schedule = min(schedules, key=lambda s: s.endDate)
-            days_until_end = (earliest_schedule.endDate - now).days
+
+            # Convert to date if needed
+            end_date = earliest_schedule.endDate
+            if isinstance(end_date, datetime):
+                end_date = end_date.date()  # Ensure it's a date object
+
+            days_until_end = (end_date - now).days
             patient_end_times.append(
                 (patient, earliest_schedule, days_until_end))
 
-        patient_end_times.sort(key=lambda x: x[1])
-
+            # Sort patients: first those with negative days (ended), then by days remaining
+        patient_end_times.sort(key=lambda x: (x[2] >= 0, x[2]))
         # Return the first 3 patients (if there are at least 3)
         three_patients = patient_end_times[:3]
         print(three_patients)
