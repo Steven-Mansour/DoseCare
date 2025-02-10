@@ -28,7 +28,8 @@
     <div class="flex flex-col gap-y-2 items-center justify-center ml-2 text-2xl text-gray-400  dark:text-gray-600">
 
         <div class="flex items-center flex-col justify-center text-2xl text-blue-700  dark:text-gray-300">
-            Today's next dose is scheduled in: <div class="countdown text-4xl font-bold" id="countdown"></div>
+            Today's next dose is scheduled in: <div class="countdown text-4xl font-bold dark:text-blue-700"
+                id="countdown"></div>
         </div>
 
         {%for entry in user.nextDose%}
@@ -40,8 +41,8 @@
 
     </div>
 </div>
-<div class="flex items-center  justify-center h-48 mb-4 rounded-sm bg-gray-50 dark:bg-gray-800">
-
+<div class="flex items-center flex-col  justify-center h-48 mb-4 rounded-sm bg-gray-50 dark:bg-gray-800">
+    <div class="mb-2 text-gray-600 dark:text-gray-300"> Your dispenser's containers: </div>
     <table
         class=" dark:text-blue-300 text-blue-700 rounded-md table-auto overflow-hidden w-3/4 border-collapse text-center border border-gray-300">
         <thead>
