@@ -2,7 +2,7 @@
 {% block title %}Home{% endblock %}
 
 {%block pageContent%}
-<div class="grid grid-cols-3 gap-4 mb-4">
+<div class="grid grid-cols-2 {%if user.role == 'patient'%} grid-cols-3 {%endif%} gap-4 mb-4">
     <div
         class="flex text-lg items-center justify-center h-24 p-4 rounded-sm bg-gray-50 dark:bg-gray-800 dark:text-white">
         <p class="text-xl text-blue-700 dark:text-gray-300">
@@ -14,14 +14,13 @@
             Role: <b>{{user.role|capitalize}}</b>
         </p>
     </div>
+    {%if user.role == 'patient'%}
     <div class="flex items-center justify-center h-24 rounded-sm bg-gray-50 dark:bg-gray-800">
         <p class="ml-2 text-lg text-blue-700 dark:text-gray-300">
-            {%if user.role == 'patient'%}
             Your caregiver: <b>{{user.caregiver.firstName|capitalize}} {{user.caregiver.lastName|capitalize}}</b>
-            {%endif%}
         </p>
-
     </div>
+    {%endif%}
 </div>
 {%if user.role == 'patient'%}
 <div class="flex items-center bg-gray-100 justify-center h-48 mb-4 rounded-sm  dark:bg-gray-800">
@@ -71,6 +70,59 @@
     </table>
 </div>
 {%endif%}
+
+{%if user.role == 'caregiver'%}
+<div class="flex items-center bg-gray-100 justify-center h-48 mb-4 rounded-sm  dark:bg-gray-800">
+    <div class=" text-center  ml-2 text-2xl text-blue-800  dark:text-blue-600">
+        You are currently supervising <b>{{ user.nbOfPatients }}</b> {{ 'patient' if user.nbOfPatients == 1 else
+        'patients' }}.
+    </div>
+</div>
+<div class="overflow-x-auto rounded-sm bg-gray-50 dark:bg-gray-800 p-4 mb-4 max-w-2xl mx-auto">
+    <div class="text-lg font-semibold text-blue-700 dark:text-blue-400 text-center mb-2">
+        Patient Schedules Nearing Completion
+    </div>
+    <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+        <thead class="bg-blue-700 dark:bg-blue-900">
+            <tr>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
+                    Patient Name
+                </th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
+                    End Date
+                </th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
+                    Pill Name
+                </th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
+                    Days Remaining
+                </th>
+            </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200 dark:bg-gray-800 dark:divide-gray-700">
+            {% for patient, schedule, days in user.patientsEndingSchedules %}
+            <tr>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">
+                    {{ patient.firstName }} {{ patient.lastName }}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
+                    {{ schedule.endDate }}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
+                    {{ schedule.pill.name }}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
+                    {{ days if days >= 0 else "Ended {} {}".format(-days, "day ago" if days == -1 else "days ago") }}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+
+{%endif%}
+
 <div class="grid grid-cols-2 gap-4 mb-4">
 
     <div class="flex items-center justify-center rounded-sm bg-gray-50 h-28 dark:bg-gray-800">
