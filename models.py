@@ -39,7 +39,8 @@ class User(db.Model, UserMixin):
     def get_stats(self):
         """Check if the user is a patient, caregiver, or pharmacist and return a dictionary."""
         if self.patients:  # Checks if the user has an associated patient record
-            return {"role": "patient", "name": self.patients[0].firstName, "patientID": self.patients[0].patientID, "email": self.email,  "patient": self.patients[0], "caregiver": self.patients[0].caregiver}
+            return {"role": "patient", "name": self.patients[0].firstName, "patientID": self.patients[0].patientID, "email": self.email,  "patient": self.patients[0],
+                    "caregiver": self.patients[0].caregiver, "nextDose": self.patients[0].get_next_dose(), "remQty": self.patients[0].get_qty_per_container()}
         elif self.caregivers:  # Checks if the user has an associated caregiver record
             return {"role": "caregiver", "name": self.caregivers[0].firstName, "caregiverID": self.caregivers[0].caregiverID, "email": self.email, "caregiver": self.caregivers[0]}
         elif self.pharmacies:  # Checks if the user has an associated pharmacy record
@@ -77,6 +78,7 @@ class Patient(db.Model):
     def get_monthly_schedule(self):
         current_year = datetime.now().year
         current_month = datetime.now().month
+        current_day = datetime.now().day
         month_name = calendar.month_name[current_month]
         cal = calendar.Calendar().monthdayscalendar(current_year, current_month)
         daily_pills = {day: [] for week in cal for day in week if day != 0}
@@ -96,7 +98,7 @@ class Patient(db.Model):
                     if start_date <= current_date.date() <= end_date:
                         date_difference = current_date.date() - start_date
                         days_difference = date_difference.days
-                        if days[days_difference % frequency == 1]:
+                        if days[days_difference % frequency] == 1:
                             if schedule.pill.name not in daily_pills[current_date.day]:
                                 daily_pills[current_date.day].append(
                                     schedule.pill.name)
@@ -105,8 +107,53 @@ class Patient(db.Model):
             "cal": cal,
             "current_year": current_year,
             "month_name": month_name,
-            "daily_pills": daily_pills
+            "daily_pills": daily_pills,
+            "current_day": current_day
         }
+
+    def get_next_dose(self):
+        schedules = self.pill_schedules
+        current_year = datetime.now().year
+        current_month = datetime.now().month
+        current_day = datetime.now().day
+        current_time = datetime.now().time()
+        cal = calendar.Calendar().monthdayscalendar(current_year, current_month)
+        result = []
+
+        for schedule in schedules:
+            start_date = schedule.startDate
+            end_date = schedule.endDate
+            frequency = schedule.frequency
+            days = schedule.day
+
+            current_date = datetime(current_year, current_month, current_day)
+            if start_date <= current_date.date() <= end_date:
+                date_difference = current_date.date() - start_date
+                days_difference = date_difference.days
+                if days[days_difference % frequency] == 1:
+                    for prop in schedule.schedule_properties:
+                        if prop.time > current_time:
+                            result.append(
+                                {"schedule": schedule, "prop": prop, "pill": schedule.pill.name})
+
+        result.sort(key=lambda x: x["prop"].time)
+        if result:
+            closest_time = result[0]["prop"].time
+            closest_doses = [
+                entry for entry in result if entry["prop"].time == closest_time]
+        else:
+            closest_doses = []
+        print(closest_doses)
+        return closest_doses
+
+    def get_qty_per_container(self):
+        schedules = self.pill_schedules
+        qty = []
+        for schedule in schedules:
+            qty.append({"container": schedule.containerNb,
+                       "qty": schedule.remainingQty,
+                        "pill": schedule.pill.name})
+        return qty
 
 
 class Pharmacy(db.Model):

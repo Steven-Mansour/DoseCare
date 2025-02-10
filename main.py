@@ -5,19 +5,18 @@ from flask_login import login_required, current_user
 from datetime import datetime, timedelta
 from messages import sendMessage
 
-
 main = Blueprint('main', __name__)
 
 
 @main.route('/')
 def index():
-
     return redirect(url_for('main.home'))
 
 
 @main.route('/home')
 @login_required
 def home():
+
     return render_template("home.html", user=current_user.get_stats())
 
 
@@ -25,6 +24,8 @@ def home():
 @login_required
 def profile():
     return render_template("profile.html", user=current_user.get_info())
+
+
 # @main.route('/assignPharmacy')
 # @login_required
 # def assignPharmacy():
@@ -35,6 +36,15 @@ def profile():
 #     patient = Patient.query.first_or_404(patient)
 #     pharmacy = patient.pharmacy
 #     return render_template("assignPharmacy.html", user=current_user.get_info(), pharmacy=pharmacy)
+
+@main.route('/getNextDose/<int:patient_id>')
+@login_required
+def getNextDose(patient_id):
+    if (current_user.get_info()['role'] != 'patient'):
+        flash("You are not allowed to access this page")
+        return redirect(url_for('main.home'))
+    patient = Patient.query.filter_by(patientID=patient_id).first()
+    return f"{patient.get_next_dose()}"
 
 
 @main.route('/viewCalendar/<int:patient_id>')
@@ -54,7 +64,8 @@ def viewCalendar(patient_id):
                            cal=monthlySched["cal"],
                            year=monthlySched["current_year"],
                            month=monthlySched["month_name"],
-                           daily_pills=monthlySched["daily_pills"])
+                           daily_pills=monthlySched["daily_pills"],
+                           current_day=monthlySched["current_day"])
 
 
 @main.route('/createSchedule/<int:patient_id>')
