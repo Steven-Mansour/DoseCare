@@ -15,7 +15,7 @@ def create_app():
     app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv("DATABASE_URL")
     # Disable event system for performance
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-    app.secret_key = "311231o2uei12vdiij1br1iy"
+    app.secret_key = "311231o2uei12vkafdsfjkdiij1br1iy"
     db.init_app(app)
 
     login_manager = LoginManager()
@@ -34,5 +34,4 @@ def create_app():
 
     from auth import auth as auth_blueprint
     app.register_blueprint(auth_blueprint, url_prefix='/auth')
-
     return app

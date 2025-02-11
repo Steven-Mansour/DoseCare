@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, redirect, url_for, request, flash, jsonify
+from flask import Blueprint, render_template, redirect, url_for, request, flash, jsonify, session
 from models import User, Pill, Caregiver, Patient, PillSchedule, ScheduleProperty
 from app import db
 from flask_login import login_required, current_user
@@ -65,7 +65,7 @@ def viewCalendar(patient_id):
                            year=monthlySched["current_year"],
                            month=monthlySched["month_name"],
                            daily_pills=monthlySched["daily_pills"],
-                           current_day=monthlySched["current_day"])
+                           current_day=monthlySched["current_day"], patient=patient)
 
 
 @main.route('/createSchedule/<int:patient_id>')
@@ -88,6 +88,12 @@ def schedule(patient_id):
     if patient:
         if patient.caregiverID == current_user.caregivers[0].caregiverID:
             schedules = patient.pill_schedules
+            session['breadcrumbs'] = [
+                {'name': 'Home', 'url': url_for('main.home')},
+                {'name': 'Patients', 'url': url_for('main.viewPatients')},
+                {'name': 'Schedules', 'url': url_for(
+                    'main.schedule', patient_id=patient_id)}
+            ]
             return render_template('schedule.html', patient=patient, user=current_user.get_info(), schedules=schedules)
         else:
             flash("You are not allowed to access this patients schedule")
@@ -104,6 +110,15 @@ def editSchedule(schedule_id):
         return redirect(url_for('auth.login'))
     schedule = PillSchedule.query.get_or_404(schedule_id)
     if schedule:
+        session['breadcrumbs'] = [
+            {'name': 'Home', 'url': url_for('main.home')},
+            {'name': 'Patients', 'url': url_for('main.viewPatients')},
+            {'name': 'Schedules', 'url': url_for(
+                'main.schedule', patient_id=schedule.patientID)},
+            {'name': f'{schedule.pill.name} schedule', 'url': url_for(
+                'main.editSchedule', schedule_id=schedule.scheduleID)},
+
+        ]
         return render_template('editSchedule.html', user=current_user.get_info(), schedule=schedule)
 
     else:
@@ -222,6 +237,10 @@ def createPill():
 def viewPatients():
     if current_user.get_info()['role'] != 'caregiver':
         return redirect(url_for('auth.login'))
+    session['breadcrumbs'] = [
+        {'name': 'Home', 'url': url_for('main.home')},
+        {'name': 'Patients', 'url': url_for('main.viewPatients')}
+    ]
     caregiver = current_user.caregivers[0]
     return render_template("viewPatients.html", user=current_user.get_info(), patients=caregiver.patients)
 
