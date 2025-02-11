@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, redirect, url_for, request, flash, jsonify
+from flask import Blueprint, render_template, redirect, url_for, request, flash, jsonify, session
 from models import User, Pill, Caregiver, Patient, PillSchedule, ScheduleProperty
 from app import db
 from flask_login import login_required, current_user
@@ -13,10 +13,16 @@ def index():
     return redirect(url_for('main.home'))
 
 
+@main.route('/hey')
+def hey():
+    patient = Patient.query.filter_by(patientID=31).first()
+
+    return patient.send_schedule()
+
+
 @main.route('/home')
 @login_required
 def home():
-
     return render_template("home.html", user=current_user.get_stats())
 
 
@@ -65,7 +71,7 @@ def viewCalendar(patient_id):
                            year=monthlySched["current_year"],
                            month=monthlySched["month_name"],
                            daily_pills=monthlySched["daily_pills"],
-                           current_day=monthlySched["current_day"])
+                           current_day=monthlySched["current_day"], patient=patient)
 
 
 @main.route('/createSchedule/<int:patient_id>')
@@ -78,6 +84,44 @@ def createSchedule(patient_id):
     return render_template('createSchedule.html', user=current_user.get_info(), patient_id=patient_id)
 
 
+@main.route('/deleteSchedule/<int:schedule_id>', methods=['POST'])
+@login_required
+def deleteSchedule(schedule_id):
+    if (current_user.get_info()['role'] != 'caregiver'):
+        flash("You are not allowed to access this route")
+        return redirect(url_for('auth.login'))
+    schedule = PillSchedule.query.filter_by(scheduleID=schedule_id).first()
+    patient = schedule.patient
+    if (patient.caregiverID != current_user.get_info()['caregiverID']):
+        print(patient.firstName)
+        print(current_user.get_info()['caregiverID'])
+        flash("You are not allowed to perform this action")
+
+    if schedule:
+        for prop in schedule.schedule_properties:
+            db.session.delete(prop)
+        db.session.delete(schedule)
+        db.session.commit()
+        flash("Schedule deleted successfully", "success")
+    else:
+        flash("Schedule not found", "error")
+
+    return redirect(url_for('main.schedule', patient_id=patient.patientID))
+
+
+@main.route('/expiringSchedules')
+@login_required
+def expiringSchedules():
+    if (current_user.get_info()['role'] != 'caregiver'):
+        flash("You are not allowed to access this route")
+        return redirect(url_for('auth.login'))
+    user = current_user
+    caregiver = user.caregivers[0]
+    schedules = caregiver.get_patients_ending_schedule(
+        len(caregiver.patients))
+    return render_template("expiringSchedules.html", user=user.get_stats(), schedules=schedules)
+
+
 @main.route('/schedule/<int:patient_id>')
 @login_required
 def schedule(patient_id):
@@ -88,6 +132,12 @@ def schedule(patient_id):
     if patient:
         if patient.caregiverID == current_user.caregivers[0].caregiverID:
             schedules = patient.pill_schedules
+            session['breadcrumbs'] = [
+                {'name': 'Home', 'url': url_for('main.home')},
+                {'name': 'Patients', 'url': url_for('main.viewPatients')},
+                {'name': 'Schedules', 'url': url_for(
+                    'main.schedule', patient_id=patient_id)}
+            ]
             return render_template('schedule.html', patient=patient, user=current_user.get_info(), schedules=schedules)
         else:
             flash("You are not allowed to access this patients schedule")
@@ -104,6 +154,15 @@ def editSchedule(schedule_id):
         return redirect(url_for('auth.login'))
     schedule = PillSchedule.query.get_or_404(schedule_id)
     if schedule:
+        session['breadcrumbs'] = [
+            {'name': 'Home', 'url': url_for('main.home')},
+            {'name': 'Patients', 'url': url_for('main.viewPatients')},
+            {'name': 'Schedules', 'url': url_for(
+                'main.schedule', patient_id=schedule.patientID)},
+            {'name': f'{schedule.pill.name} schedule', 'url': url_for(
+                'main.editSchedule', schedule_id=schedule.scheduleID)},
+
+        ]
         return render_template('editSchedule.html', user=current_user.get_info(), schedule=schedule)
 
     else:
@@ -222,6 +281,10 @@ def createPill():
 def viewPatients():
     if current_user.get_info()['role'] != 'caregiver':
         return redirect(url_for('auth.login'))
+    session['breadcrumbs'] = [
+        {'name': 'Home', 'url': url_for('main.home')},
+        {'name': 'Patients', 'url': url_for('main.viewPatients')}
+    ]
     caregiver = current_user.caregivers[0]
     return render_template("viewPatients.html", user=current_user.get_info(), patients=caregiver.patients)
 

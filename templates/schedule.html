@@ -2,14 +2,28 @@
 {% block title %}Schedules{% endblock %}
 {%block pageContent%}
 
-<div class="flex flex-col h-screen items-center pt-20 h-48 mb-4 rounded-sm bg-gray-50 dark:bg-gray-800">
+{% if session['breadcrumbs'] %}
+<nav aria-label="breadcrumb" class="my-4">
+    <ol class="breadcrumb flex text-lg text-gray-600 dark:text-gray-300">
+        {% for crumb in session['breadcrumbs'] %}
+        <li class="breadcrumb-item inline">
+            <a href="{{ crumb.url }}" class="hover:underline"> {{ crumb.name }} </a>
+            {% if not loop.last %}
+            <span class="mx-2 text-gray-400 dark:text-gray-500"> &gt;&nbsp </span>
+            {% endif %}
+        </li>
+        {% endfor %}
+    </ol>
+</nav>
+{% endif %}
+<div class="flex flex-col min-h-screen h-fit items-center pt-20 h-48 mb-4 rounded-sm bg-gray-50 dark:bg-gray-800">
     <h1 class="text-4xl font-bold text-gray-900 dark:text-white text-center mb-6">{{patient.firstName|capitalize}}'s
         Schedules</h1>
     <br> <br>
     <div class="flex flex-col gap-4 ">
         <!-- Header Row -->
         <div
-            class="grid gap-x-6 grid-cols-[1fr_1fr_1fr_0.5fr] text-center text-blue-600 items-center px-4  font-semibold">
+            class="grid gap-x-6 grid-cols-[1fr_1fr_1fr_0.5fr_0.5fr] text-center text-blue-600 items-center px-4  font-semibold">
             <div>Pill</div>
             <div>Start Date</div>
             <div>End Date</div>
@@ -17,15 +31,29 @@
         </div>
 
         <!-- Patient Rows -->
+        <div>
+
+        </div>
         {% for schedule in schedules %}
-        <div
-            class="grid gap-x-6 grid-cols-[1fr_1fr_1fr_0.5fr] text-center items-center p-4 border border-gray-300 rounded-lg bg-gray-100">
-            <div class="text-md font-semibold">
-                <a href="{{ url_for('main.editSchedule', schedule_id=schedule.scheduleID) }}">{{schedule.pill.name}}</a>
+        <div>
+            <div
+                class="grid gap-x-6 grid-cols-[1fr_1fr_1fr_0.5fr_0.5fr] text-center items-center p-4 border border-gray-300 rounded-lg bg-gray-100">
+                <div class="text-md font-semibold">
+                    <a
+                        href="{{ url_for('main.editSchedule', schedule_id=schedule.scheduleID) }}">{{schedule.pill.name}}</a>
+                </div>
+                <div class="text-md text-gray-600">{{ schedule.startDate}}</div>
+                <div class="text-md text-gray-600">{{ schedule.endDate }}</div>
+                <div class="text-md text-gray-600">{{ schedule.remainingQty}}</div>
+                <div class="flex items-center justify-center">
+                    <form action="{{ url_for('main.deleteSchedule', schedule_id=schedule.scheduleID) }}" method="post">
+                        <button type="submit" class="text-white bg-red-500 hover:bg-red-700 rounded-md p-2">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    </form>
+                </div>
             </div>
-            <div class="text-md text-gray-600">{{ schedule.startDate}}</div>
-            <div class="text-md text-gray-600">{{ schedule.endDate }}</div>
-            <div class="text-md text-gray-600">{{ schedule.remainingQty}}</div>
+
         </div>
         {% endfor %}
 
@@ -37,7 +65,7 @@
             </a>
             <!-- View Calendar -->
             <a href="{{ url_for('main.viewCalendar', patient_id=patient.patientID) }}"
-                class="px-4 py-2 text-white rounded-md hover:text-blue-700">
+                class="px-4 py-2 text-blue-700 rounded-md hover:text-blue-400 bg-gray-200 hover:bg-gray-300 hover:text-blue-100">
                 View Calendar
             </a>
         </div>

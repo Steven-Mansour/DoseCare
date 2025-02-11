@@ -3,8 +3,9 @@ from flask import jsonify
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import UserMixin
 from sqlalchemy import JSON
-from datetime import datetime, timedelta
+from datetime import datetime, date, time
 import calendar
+import json
 
 
 class User(db.Model, UserMixin):
@@ -64,26 +65,34 @@ class Caregiver(db.Model):
     def get_nb_of_patients(self):
         return len(self.patients)
 
-    def get_patients_ending_schedule(self):
+    def get_patients_ending_schedule(self, n=3):
         now = datetime.now().date()
         patient_end_times = []
 
         for patient in self.patients:
+            # Ensure schedules have valid end dates
             schedules = [
-                schedule for schedule in patient.pill_schedules]
+                s for s in patient.pill_schedules if s.endDate is not None]
             if not schedules:
                 continue
+
+            # Get the schedule with the earliest end date
             earliest_schedule = min(schedules, key=lambda s: s.endDate)
-            days_until_end = (earliest_schedule.endDate - now).days
+
+            # Convert to date if needed
+            end_date = earliest_schedule.endDate
+            if isinstance(end_date, datetime):
+                end_date = end_date.date()  # Ensure it's a date object
+
+            days_until_end = (end_date - now).days
             patient_end_times.append(
                 (patient, earliest_schedule, days_until_end))
 
-        patient_end_times.sort(key=lambda x: x[1])
-
+            # Sort patients: first those with negative days (ended), then by days remaining
+        patient_end_times.sort(key=lambda x: (x[2] >= 0, x[2]))
         # Return the first 3 patients (if there are at least 3)
-        three_patients = patient_end_times[:3]
-        print(three_patients)
-        return three_patients
+        n_patients = patient_end_times[:n]
+        return n_patients
 
 
 class Patient(db.Model):
@@ -99,6 +108,25 @@ class Patient(db.Model):
     # Define relationships with User and Caregiver
     caregiver = db.relationship('Caregiver', backref='patients', lazy=True)
     user = db.relationship('User', backref='patients', lazy=True)
+
+    def send_schedule(self):
+        schedules = self.pill_schedules
+        schedule_list = []
+
+        for schedule in schedules:
+            # Convert schedule object to dict
+            schedule_data = serialize(schedule)
+            # Convert properties to dicts
+            prop_list = [serialize(prop)
+                         for prop in schedule.schedule_properties]
+
+            schedule_list.append({
+                "schedule": schedule_data,
+                "properties": prop_list
+            })
+
+        # Return JSON formatted output
+        return json.dumps(schedule_list, indent=4)
 
     def get_monthly_schedule(self):
         current_year = datetime.now().year
@@ -243,3 +271,17 @@ class ScheduleProperty(db.Model):
     # Relationship
     schedule = db.relationship(
         'PillSchedule', backref='schedule_properties', lazy=True)
+
+
+def serialize(obj):
+    """Helper function to convert objects to serializable dictionaries."""
+    if isinstance(obj, (date, datetime)):  # Convert date/datetime to ISO format
+        return obj.isoformat()
+    elif isinstance(obj, time):  # Convert time to a string (HH:MM:SS)
+        return obj.strftime('%H:%M:%S')
+    elif hasattr(obj, '__dict__'):  # Convert objects with attributes to dict
+        return {key: serialize(value) for key, value in vars(obj).items() if not key.startswith('_')}
+    elif isinstance(obj, list):  # Convert list of objects
+        return [serialize(item) for item in obj]
+    else:
+        return obj
