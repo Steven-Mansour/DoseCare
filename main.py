@@ -13,10 +13,16 @@ def index():
     return redirect(url_for('main.home'))
 
 
+@main.route('/hey')
+def hey():
+    patient = Patient.query.filter_by(patientID=31).first()
+
+    return patient.send_schedule()
+
+
 @main.route('/home')
 @login_required
 def home():
-
     return render_template("home.html", user=current_user.get_stats())
 
 
@@ -76,6 +82,44 @@ def createSchedule(patient_id):
         return redirect(url_for('auth.login'))
     patient_id = patient_id
     return render_template('createSchedule.html', user=current_user.get_info(), patient_id=patient_id)
+
+
+@main.route('/deleteSchedule/<int:schedule_id>', methods=['POST'])
+@login_required
+def deleteSchedule(schedule_id):
+    if (current_user.get_info()['role'] != 'caregiver'):
+        flash("You are not allowed to access this route")
+        return redirect(url_for('auth.login'))
+    schedule = PillSchedule.query.filter_by(scheduleID=schedule_id).first()
+    patient = schedule.patient
+    if (patient.caregiverID != current_user.get_info()['caregiverID']):
+        print(patient.firstName)
+        print(current_user.get_info()['caregiverID'])
+        flash("You are not allowed to perform this action")
+
+    if schedule:
+        for prop in schedule.schedule_properties:
+            db.session.delete(prop)
+        db.session.delete(schedule)
+        db.session.commit()
+        flash("Schedule deleted successfully", "success")
+    else:
+        flash("Schedule not found", "error")
+
+    return redirect(url_for('main.schedule', patient_id=patient.patientID))
+
+
+@main.route('/expiringSchedules')
+@login_required
+def expiringSchedules():
+    if (current_user.get_info()['role'] != 'caregiver'):
+        flash("You are not allowed to access this route")
+        return redirect(url_for('auth.login'))
+    user = current_user
+    caregiver = user.caregivers[0]
+    schedules = caregiver.get_patients_ending_schedule(
+        len(caregiver.patients))
+    return render_template("expiringSchedules.html", user=user.get_stats(), schedules=schedules)
 
 
 @main.route('/schedule/<int:patient_id>')

@@ -7,9 +7,9 @@
     <ol class="breadcrumb flex text-lg text-gray-600 dark:text-gray-300">
         {% for crumb in session['breadcrumbs'] %}
         <li class="breadcrumb-item inline">
-            <a href="{{ crumb.url }}" class="hover:underline"> {{ crumb.name }} </a>
+            <a href="{{ crumb.url }}" class="hover:underline">{{ crumb.name }}</a>
             {% if not loop.last %}
-            <span class="mx-2 text-gray-400 dark:text-gray-500"> &gt;&nbsp </span>
+            <span class="mx-2 text-gray-400 dark:text-gray-500">&gt;&nbsp</span>
             {% endif %}
         </li>
         {% endfor %}
