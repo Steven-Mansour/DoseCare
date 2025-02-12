@@ -15,8 +15,9 @@ def index():
 
 @main.route('/hey')
 def hey():
-    patient = Patient.query.filter_by(patientID=31).first()
-    patient.get_lowest_pills_schedule()
+    # patient = Patient.query.filter_by(patientID=31).first()
+    caregiver = Caregiver.query.filter_by(caregiverID=13).first()
+    caregiver.get_lowest_pills_schedule()
     return "hey"
     # return patient.send_schedule()
 

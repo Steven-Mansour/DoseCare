@@ -44,7 +44,8 @@ class User(db.Model, UserMixin):
                     "caregiver": self.patients[0].caregiver, "nextDose": self.patients[0].get_next_dose(), "remQty": self.patients[0].get_qty_per_container()}
         elif self.caregivers:  # Checks if the user has an associated caregiver record
             return {"role": "caregiver", "name": self.caregivers[0].firstName, "caregiverID": self.caregivers[0].caregiverID, "email": self.email,
-                    "caregiver": self.caregivers[0], "nbOfPatients": self.caregivers[0].get_nb_of_patients(), "patientsEndingSchedules": self.caregivers[0].get_patients_ending_schedule()}
+                    "caregiver": self.caregivers[0], "nbOfPatients": self.caregivers[0].get_nb_of_patients(),
+                    "patientsEndingSchedules": self.caregivers[0].get_patients_ending_schedule(), "lowPillsSchedules": self.caregivers[0].get_lowest_pills_schedule()}
         elif self.pharmacies:  # Checks if the user has an associated pharmacy record
             return {"role": "pharmacist", "name": self.pharmacies[0].name, "pharmacyID": self.pharmacies[0].pharmacyID, "email": self.email, "pharmacy": self.pharmacies[0]}
         # If the user doesn't belong to any category
@@ -93,6 +94,46 @@ class Caregiver(db.Model):
         # Return the first 3 patients (if there are at least 3)
         n_patients = patient_end_times[:n]
         return n_patients
+
+    def get_lowest_pills_schedule(self):
+        list = []
+        for patient in self.patients:
+            schedules = patient.pill_schedules
+            current_year = datetime.now().year
+            current_month = datetime.now().month
+            current_day = datetime.now().day
+            current_time = datetime.now().time()
+
+            for schedule in schedules:
+                daysLeft = 0
+                qty = schedule.remainingQty
+                days = schedule.day
+                frequency = schedule.frequency
+                start_date = schedule.startDate
+                end_date = schedule.startDate
+                current_date = datetime(
+                    current_year, current_month, current_day)
+
+                if start_date <= current_date.date() <= end_date:
+                    date_difference = current_date.date() - start_date
+                    days_difference = date_difference.days
+                    if days[days_difference % frequency] == 1:
+                        for prop in schedule.schedule_properties:
+                            if prop.time > current_time:
+                                qty = qty - prop.dose
+
+                current_date += timedelta(days=1)
+                while (qty > 0):
+                    date_difference = current_date.date() - start_date
+                    days_difference = date_difference.days
+                    if days[days_difference % frequency] == 1:
+                        for prop in schedule.schedule_properties:
+                            qty = qty-prop.dose
+                    current_date += timedelta(days=1)
+                    daysLeft += 1
+                list.append((patient, schedule, daysLeft))
+        schedules_list = sorted(list, key=lambda x: x[2])
+        return schedules_list
 
 
 class Patient(db.Model):
@@ -198,42 +239,6 @@ class Patient(db.Model):
             closest_doses = []
         print(closest_doses)
         return closest_doses
-
-    def get_lowest_pills_schedule(self):
-        schedules = self.pill_schedules
-        current_year = datetime.now().year
-        current_month = datetime.now().month
-        current_day = datetime.now().day
-        current_time = datetime.now().time()
-
-        for schedule in schedules:
-            daysLeft = 0
-            qty = schedule.remainingQty
-            days = schedule.day
-            frequency = schedule.frequency
-            start_date = schedule.startDate
-            end_date = schedule.startDate
-            current_date = datetime(current_year, current_month, current_day)
-
-            if start_date <= current_date.date() <= end_date:
-                date_difference = current_date.date() - start_date
-                days_difference = date_difference.days
-                if days[days_difference % frequency] == 1:
-                    for prop in schedule.schedule_properties:
-                        if prop.time > current_time:
-                            qty = qty - prop.dose
-
-            current_date += timedelta(days=1)
-            while (qty > 0):
-                date_difference = current_date.date() - start_date
-                days_difference = date_difference.days
-                if days[days_difference % frequency] == 1:
-                    for prop in schedule.schedule_properties:
-                        qty = qty-prop.dose
-                current_date += timedelta(days=1)
-                daysLeft += 1
-            print(f"{schedule.pill.name}:{daysLeft}")
-        return
 
     def get_qty_per_container(self):
         schedules = self.pill_schedules
