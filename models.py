@@ -66,7 +66,7 @@ class Caregiver(db.Model):
     def get_nb_of_patients(self):
         return len(self.patients)
 
-    def get_patients_ending_schedule(self, n=3):
+    def get_patients_ending_schedule(self, n=4):
         now = datetime.now().date()
         patient_end_times = []
 
@@ -95,44 +95,12 @@ class Caregiver(db.Model):
         n_patients = patient_end_times[:n]
         return n_patients
 
-    def get_lowest_pills_schedule(self):
+    def get_lowest_pills_schedule(self, n=4):
         list = []
         for patient in self.patients:
-            schedules = patient.pill_schedules
-            current_year = datetime.now().year
-            current_month = datetime.now().month
-            current_day = datetime.now().day
-            current_time = datetime.now().time()
-
-            for schedule in schedules:
-                daysLeft = 0
-                qty = schedule.remainingQty
-                days = schedule.day
-                frequency = schedule.frequency
-                start_date = schedule.startDate
-                end_date = schedule.startDate
-                current_date = datetime(
-                    current_year, current_month, current_day)
-
-                if start_date <= current_date.date() <= end_date:
-                    date_difference = current_date.date() - start_date
-                    days_difference = date_difference.days
-                    if days[days_difference % frequency] == 1:
-                        for prop in schedule.schedule_properties:
-                            if prop.time > current_time:
-                                qty = qty - prop.dose
-
-                current_date += timedelta(days=1)
-                while (qty > 0):
-                    date_difference = current_date.date() - start_date
-                    days_difference = date_difference.days
-                    if days[days_difference % frequency] == 1:
-                        for prop in schedule.schedule_properties:
-                            qty = qty-prop.dose
-                    current_date += timedelta(days=1)
-                    daysLeft += 1
-                list.append((patient, schedule, daysLeft))
+            patient.lowest_pills_schedule(list)
         schedules_list = sorted(list, key=lambda x: x[2])
+        schedules_list = schedules_list[:n]
         return schedules_list
 
 
@@ -149,6 +117,43 @@ class Patient(db.Model):
     # Define relationships with User and Caregiver
     caregiver = db.relationship('Caregiver', backref='patients', lazy=True)
     user = db.relationship('User', backref='patients', lazy=True)
+
+    def lowest_pills_schedule(self, list):
+        current_year = datetime.now().year
+        current_month = datetime.now().month
+        current_day = datetime.now().day
+        current_time = datetime.now().time()
+        schedules = self.pill_schedules
+
+        for schedule in schedules:
+            daysLeft = 0
+            qty = schedule.remainingQty
+            days = schedule.day
+            frequency = schedule.frequency
+            start_date = schedule.startDate
+            end_date = schedule.startDate
+            current_date = datetime(
+                current_year, current_month, current_day)
+
+            if start_date <= current_date.date() <= end_date:
+                date_difference = current_date.date() - start_date
+                days_difference = date_difference.days
+                if days[days_difference % frequency] == 1:
+                    for prop in schedule.schedule_properties:
+                        if prop.time > current_time:
+                            qty = qty - prop.dose
+
+            current_date += timedelta(days=1)
+            while (qty > 0):
+                date_difference = current_date.date() - start_date
+                days_difference = date_difference.days
+                if days[days_difference % frequency] == 1:
+                    for prop in schedule.schedule_properties:
+                        qty = qty-prop.dose
+                current_date += timedelta(days=1)
+                daysLeft += 1
+            list.append((self, schedule, daysLeft))
+        return list
 
     def send_schedule(self):
         schedules = self.pill_schedules
