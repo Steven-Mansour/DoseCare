@@ -28,7 +28,8 @@
             {% for patient, schedule, days in schedules %}
             <tr>
                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">
-                    {{ patient.firstName }} {{ patient.lastName }}
+                    <a href="{{url_for('main.schedule', patient_id=patient.patientID)}}">{{ patient.firstName }} {{
+                        patient.lastName }}</a>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
                     {{ schedule.endDate }}

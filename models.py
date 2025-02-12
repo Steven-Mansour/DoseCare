@@ -3,7 +3,7 @@ from flask import jsonify
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import UserMixin
 from sqlalchemy import JSON
-from datetime import datetime, date, time
+from datetime import datetime, date, time, timedelta
 import calendar
 import json
 
@@ -198,6 +198,42 @@ class Patient(db.Model):
             closest_doses = []
         print(closest_doses)
         return closest_doses
+
+    def get_lowest_pills_schedule(self):
+        schedules = self.pill_schedules
+        current_year = datetime.now().year
+        current_month = datetime.now().month
+        current_day = datetime.now().day
+        current_time = datetime.now().time()
+
+        for schedule in schedules:
+            daysLeft = 0
+            qty = schedule.remainingQty
+            days = schedule.day
+            frequency = schedule.frequency
+            start_date = schedule.startDate
+            end_date = schedule.startDate
+            current_date = datetime(current_year, current_month, current_day)
+
+            if start_date <= current_date.date() <= end_date:
+                date_difference = current_date.date() - start_date
+                days_difference = date_difference.days
+                if days[days_difference % frequency] == 1:
+                    for prop in schedule.schedule_properties:
+                        if prop.time > current_time:
+                            qty = qty - prop.dose
+
+            current_date += timedelta(days=1)
+            while (qty > 0):
+                date_difference = current_date.date() - start_date
+                days_difference = date_difference.days
+                if days[days_difference % frequency] == 1:
+                    for prop in schedule.schedule_properties:
+                        qty = qty-prop.dose
+                current_date += timedelta(days=1)
+                daysLeft += 1
+            print(f"{schedule.pill.name}:{daysLeft}")
+        return
 
     def get_qty_per_container(self):
         schedules = self.pill_schedules
