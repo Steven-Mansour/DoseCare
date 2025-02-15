@@ -8,6 +8,31 @@ import calendar
 import json
 
 
+class Carer(db.Model):
+    __abstract__ = True
+
+    def get_patients(self):
+        return self.patients
+
+    def get_nb_of_patients(self):
+        return len(self.patients)
+
+    def get_patients_ending_schedule(self, n=3):
+        patient_end_times = []
+        for patient in self.patients:
+            patient.get_ending_schedules(patient_end_times)
+        patient_end_times.sort(key=lambda x: (x[2] >= 0, x[2]))
+        return patient_end_times[:n]
+
+    def get_lowest_pills_schedule(self, n=3):
+        list = []
+        for patient in self.patients:
+            patient.lowest_pills_schedule(list)
+        list.sort(key=lambda x: (x[2] >= 0, x[2]))
+        schedules_list = list[:n]
+        return schedules_list
+
+
 class User(db.Model, UserMixin):
     userID = db.Column(db.Integer, primary_key=True, autoincrement=True)
     email = db.Column(db.String(120), unique=True,
@@ -47,12 +72,14 @@ class User(db.Model, UserMixin):
                     "caregiver": self.caregivers[0], "nbOfPatients": self.caregivers[0].get_nb_of_patients(),
                     "patientsEndingSchedules": self.caregivers[0].get_patients_ending_schedule(), "lowPillsSchedules": self.caregivers[0].get_lowest_pills_schedule()}
         elif self.pharmacies:  # Checks if the user has an associated pharmacy record
-            return {"role": "pharmacist", "name": self.pharmacies[0].name, "pharmacyID": self.pharmacies[0].pharmacyID, "email": self.email, "pharmacy": self.pharmacies[0]}
+            return {"role": "pharmacist", "name": self.pharmacies[0].name, "pharmacyID": self.pharmacies[0].pharmacyID, "email": self.email, "pharmacy": self.pharmacies[0],
+                    "nbOfPatients": self.pharmacies[0].get_nb_of_patients(),
+                    "patientsEndingSchedules": self.pharmacies[0].get_patients_ending_schedule(), "lowPillsSchedules": self.pharmacies[0].get_lowest_pills_schedule()}
         # If the user doesn't belong to any category
         return {"role": "unknown", "name": "N/A"}
 
 
-class Caregiver(db.Model):
+class Caregiver(Carer):
     caregiverID = db.Column(db.Integer, primary_key=True, autoincrement=True)
     firstName = db.Column(db.String(100), nullable=False)
     lastName = db.Column(db.String(100), nullable=False)
@@ -63,45 +90,26 @@ class Caregiver(db.Model):
     # Define relationship with User
     user = db.relationship('User', backref='caregivers', lazy=True)
 
-    def get_nb_of_patients(self):
-        return len(self.patients)
+    # def get_nb_of_patients(self):
+    #     return len(self.patients)
 
-    def get_patients_ending_schedule(self, n=4):
-        now = datetime.now().date()
-        patient_end_times = []
+    # def get_patients_ending_schedule(self, n=3):
+    #     patient_end_times = []
 
-        for patient in self.patients:
-            # Ensure schedules have valid end dates
-            schedules = [
-                s for s in patient.pill_schedules if s.endDate is not None]
-            if not schedules:
-                continue
+    #     for patient in self.patients:
+    #         patient.get_ending_schedules(patient_end_times)
+    #     patient_end_times.sort(key=lambda x: (x[2] >= 0, x[2]))
+    #     n_patients = patient_end_times[:n]
+    #     return n_patients
 
-            # Get the schedule with the earliest end date
-            earliest_schedule = min(schedules, key=lambda s: s.endDate)
 
-            # Convert to date if needed
-            end_date = earliest_schedule.endDate
-            if isinstance(end_date, datetime):
-                end_date = end_date.date()  # Ensure it's a date object
-
-            days_until_end = (end_date - now).days
-            patient_end_times.append(
-                (patient, earliest_schedule, days_until_end))
-
-            # Sort patients: first those with negative days (ended), then by days remaining
-        patient_end_times.sort(key=lambda x: (x[2] >= 0, x[2]))
-        # Return the first 3 patients (if there are at least 3)
-        n_patients = patient_end_times[:n]
-        return n_patients
-
-    def get_lowest_pills_schedule(self, n=4):
-        list = []
-        for patient in self.patients:
-            patient.lowest_pills_schedule(list)
-        schedules_list = sorted(list, key=lambda x: x[2])
-        schedules_list = schedules_list[:n]
-        return schedules_list
+patient_pharmacy = db.Table(
+    'patient_pharmacy',
+    db.Column('patientID', db.Integer, db.ForeignKey(
+        'patient.patientID'), primary_key=True),
+    db.Column('pharmacyID', db.Integer, db.ForeignKey(
+        'pharmacy.pharmacyID'), primary_key=True)
+)
 
 
 class Patient(db.Model):
@@ -117,6 +125,29 @@ class Patient(db.Model):
     # Define relationships with User and Caregiver
     caregiver = db.relationship('Caregiver', backref='patients', lazy=True)
     user = db.relationship('User', backref='patients', lazy=True)
+    pharmacies = db.relationship(
+        'Pharmacy', secondary=patient_pharmacy, back_populates='patients')
+
+    def get_ending_schedules(self, list):
+        now = datetime.now().date()
+
+        # Ensure schedules have valid end dates
+        schedules = [
+            s for s in self.pill_schedules if s.endDate is not None]
+        if not schedules:
+            return list
+
+        for schedule in schedules:
+
+            # Convert to date if needed
+            end_date = schedule.endDate
+            if isinstance(end_date, datetime):
+                end_date = end_date.date()  # Ensure it's a date object
+
+            days_until_end = (end_date - now).days
+            list.append(
+                (self, schedule, days_until_end))
+        return list
 
     def lowest_pills_schedule(self, list):
         current_year = datetime.now().year
@@ -255,7 +286,7 @@ class Patient(db.Model):
         return qty
 
 
-class Pharmacy(db.Model):
+class Pharmacy(Carer):
     pharmacyID = db.Column(db.Integer, primary_key=True, autoincrement=True)
     name = db.Column(db.String(100), nullable=False)
     location = db.Column(db.String(255), nullable=False)
@@ -265,6 +296,8 @@ class Pharmacy(db.Model):
 
     # Relationship with User
     user = db.relationship('User', backref='pharmacies', lazy=True)
+    patients = db.relationship(
+        'Patient', secondary=patient_pharmacy, back_populates='pharmacies')
 
 
 class PillSchedule(db.Model):

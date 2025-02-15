@@ -108,6 +108,13 @@ with create_app().app_context():
     db.session.add_all([pharmacy1, pharmacy2])
     db.session.commit()
 
+    patient1.pharmacies.append(pharmacy1)
+    patient1.pharmacies.append(pharmacy2)
+    patient2.pharmacies.append(pharmacy1)
+    patient3.pharmacies.append(pharmacy2)
+
+    db.session.commit()
+
     # Create Pills
     pill1 = Pill(name='Paracetamol', shape='Round', size=1, boxQuantity=10)
     pill2 = Pill(name='Ibuprofen', shape='Oval', size=2, boxQuantity=20)
