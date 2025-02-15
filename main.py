@@ -15,9 +15,11 @@ def index():
 
 @main.route('/hey')
 def hey():
-    patient = Patient.query.filter_by(patientID=31).first()
-
-    return patient.send_schedule()
+    # patient = Patient.query.filter_by(patientID=31).first()
+    caregiver = Caregiver.query.filter_by(caregiverID=13).first()
+    caregiver.get_lowest_pills_schedule()
+    return "hey"
+    # return patient.send_schedule()
 
 
 @main.route('/home')
@@ -56,15 +58,16 @@ def getNextDose(patient_id):
 @main.route('/viewCalendar/<int:patient_id>')
 @login_required
 def viewCalendar(patient_id):
-    if (current_user.get_info()['role'] != 'patient' and current_user.get_info()['role'] != 'caregiver'):
-        flash("You are not allowed to access this page")
-        return redirect(url_for('main.home'))
     patient = Patient.query.filter_by(patientID=patient_id).first()
-    if (current_user.get_info()['role'] == 'caregiver'):
-        if (patient.caregiverID != current_user.get_info()['caregiverID']):
-            flash("You cannot access this patients data")
-            return redirect(url_for('main.home'))
-    current_year = datetime.now().year
+    role = current_user.get_info()['role']
+
+    if ((role == 'caregiver' and patient.caregiverID != current_user.get_info()['caregiverID']) or
+        ((role == 'patient' and patient.patientID != current_user.get_info()['patientID']) or
+         (role == 'pharmacy' and current_user.pharmacies[0].pharmacyID not in [
+          pharmacy.pharmacyID for pharmacy in patient.pharmacies])
+         )):
+        flash("You cannot access this patients data")
+        return redirect(url_for('main.home'))
     monthlySched = patient.get_monthly_schedule()
     return render_template("calendar.html", user=current_user.get_info(),
                            cal=monthlySched["cal"],
@@ -77,7 +80,7 @@ def viewCalendar(patient_id):
 @main.route('/createSchedule/<int:patient_id>')
 @login_required
 def createSchedule(patient_id):
-    if (current_user.get_info()['role'] != 'pharmacist') and (current_user.get_info()['role'] != 'caregiver'):
+    if not isCarer(patient_id):
         flash("You are not allowed to access this route")
         return redirect(url_for('auth.login'))
     patient_id = patient_id
@@ -87,16 +90,11 @@ def createSchedule(patient_id):
 @main.route('/deleteSchedule/<int:schedule_id>', methods=['POST'])
 @login_required
 def deleteSchedule(schedule_id):
-    if (current_user.get_info()['role'] != 'caregiver'):
-        flash("You are not allowed to access this route")
-        return redirect(url_for('auth.login'))
     schedule = PillSchedule.query.filter_by(scheduleID=schedule_id).first()
     patient = schedule.patient
-    if (patient.caregiverID != current_user.get_info()['caregiverID']):
-        print(patient.firstName)
-        print(current_user.get_info()['caregiverID'])
-        flash("You are not allowed to perform this action")
-
+    if (not isCarer(patient.patientID)):
+        flash("You are not allowed to access this route")
+        return redirect(url_for('auth.login'))
     if schedule:
         for prop in schedule.schedule_properties:
             db.session.delete(prop)
@@ -112,35 +110,44 @@ def deleteSchedule(schedule_id):
 @main.route('/expiringSchedules')
 @login_required
 def expiringSchedules():
-    if (current_user.get_info()['role'] != 'caregiver'):
+    if (current_user.get_info()['role'] not in ['caregiver', 'pharmacist']):
+        flash("You are not allowed to access this route")
+        return redirect(url_for('auth.login'))
+    carer = current_user.caregivers[0] if current_user.caregivers else current_user.pharmacies[0]
+    schedules = carer.get_patients_ending_schedule(
+        len(carer.patients))
+    return render_template("expiringSchedules.html", user=current_user.get_stats(), schedules=schedules)
+
+
+@main.route('/lowSupplySchedules')
+@login_required
+def lowSupplySchedules():
+    if (current_user.get_info()['role'] not in ['caregiver', 'pharmacist']):
         flash("You are not allowed to access this route")
         return redirect(url_for('auth.login'))
     user = current_user
-    caregiver = user.caregivers[0]
-    schedules = caregiver.get_patients_ending_schedule(
-        len(caregiver.patients))
-    return render_template("expiringSchedules.html", user=user.get_stats(), schedules=schedules)
+    carer = current_user.caregivers[0] if current_user.caregivers else current_user.pharmacies[0]
+    schedules = carer.get_lowest_pills_schedule(
+        len(carer.patients))
+    return render_template("lowSupplySchedules.html", user=user.get_stats(), schedules=schedules)
 
 
 @main.route('/schedule/<int:patient_id>')
 @login_required
 def schedule(patient_id):
-    if (current_user.get_info()['role'] != 'pharmacist') and (current_user.get_info()['role'] != 'caregiver'):
+    if not isCarer(patient_id):
         flash("You are not allowed to access this route")
         return redirect(url_for('auth.login'))
     patient = Patient.query.filter_by(patientID=patient_id).first()
     if patient:
-        if patient.caregiverID == current_user.caregivers[0].caregiverID:
-            schedules = patient.pill_schedules
-            session['breadcrumbs'] = [
-                {'name': 'Home', 'url': url_for('main.home')},
-                {'name': 'Patients', 'url': url_for('main.viewPatients')},
-                {'name': 'Schedules', 'url': url_for(
-                    'main.schedule', patient_id=patient_id)}
-            ]
-            return render_template('schedule.html', patient=patient, user=current_user.get_info(), schedules=schedules)
-        else:
-            flash("You are not allowed to access this patients schedule")
+        schedules = patient.pill_schedules
+        session['breadcrumbs'] = [
+            {'name': 'Home', 'url': url_for('main.home')},
+            {'name': 'Patients', 'url': url_for('main.viewPatients')},
+            {'name': 'Schedules', 'url': url_for(
+                'main.schedule', patient_id=patient_id)}
+        ]
+        return render_template('schedule.html', patient=patient, user=current_user.get_info(), schedules=schedules)
     else:
         flash("Patient does not exist")
     return redirect(url_for('main.home'))
@@ -149,10 +156,11 @@ def schedule(patient_id):
 @main.route('/editSchedule/<int:schedule_id>')
 @login_required
 def editSchedule(schedule_id):
-    if (current_user.get_info()['role'] != 'pharmacist') and (current_user.get_info()['role'] != 'caregiver'):
+    schedule = PillSchedule.query.get_or_404(schedule_id)
+    patient = schedule.patient
+    if not isCarer(patient.patientID):
         flash("You are not allowed to access this route")
         return redirect(url_for('auth.login'))
-    schedule = PillSchedule.query.get_or_404(schedule_id)
     if schedule:
         session['breadcrumbs'] = [
             {'name': 'Home', 'url': url_for('main.home')},
@@ -173,7 +181,7 @@ def editSchedule(schedule_id):
 @main.route('/createSchedule/<int:patient_id>', methods=['POST'])
 @login_required
 def createSchedule_post(patient_id):
-    if (current_user.get_info()['role'] != 'pharmacist') and (current_user.get_info()['role'] != 'caregiver'):
+    if not isCarer(patient_id):
         flash("You are not allowed to access this route")
         return redirect(url_for('auth.login'))
     schedule = PillSchedule()
@@ -214,10 +222,11 @@ def createSchedule_post(patient_id):
 @main.route('/editSchedule/<int:schedule_id>', methods=['POST'])
 @login_required
 def editSchedule_post(schedule_id):
-    if (current_user.get_info()['role'] != 'pharmacist') and (current_user.get_info()['role'] != 'caregiver'):
+    schedule = PillSchedule.query.get_or_404(schedule_id)
+    patient = schedule.patient
+    if not isCarer(patient.patientID):
         flash("You are not allowed to access this route")
         return redirect(url_for('auth.login'))
-    schedule = PillSchedule.query.get_or_404(schedule_id)
     frequency = request.form.get('frequency')
     selected_days = [0] * int(frequency)
     # Loop through each checkbox and update the corresponding index to 1 if checked
@@ -279,14 +288,14 @@ def createPill():
 @main.route('/viewPatients')
 @login_required
 def viewPatients():
-    if current_user.get_info()['role'] != 'caregiver':
+    if current_user.get_info()['role'] not in 'caregiver pharmacist':
         return redirect(url_for('auth.login'))
     session['breadcrumbs'] = [
         {'name': 'Home', 'url': url_for('main.home')},
         {'name': 'Patients', 'url': url_for('main.viewPatients')}
     ]
-    caregiver = current_user.caregivers[0]
-    return render_template("viewPatients.html", user=current_user.get_info(), patients=caregiver.patients)
+    carer = current_user.caregivers[0] if current_user.caregivers else current_user.pharmacies[0]
+    return render_template("viewPatients.html", user=current_user.get_info(), patients=carer.patients)
 
 
 @main.route('/assignCaregiver')
@@ -369,3 +378,12 @@ def search_caregiver():
     } for caregiver in caregivers]
 
     return jsonify(result)
+
+
+def isCarer(patient_id):
+    patient = Patient.query.filter_by(patientID=patient_id).first()
+    carer = current_user.caregivers[0] if current_user.caregivers else current_user.pharmacies[0]
+    if ((current_user.caregivers and patient.caregiverID == carer.caregiverID) or
+            (current_user.pharmacies and carer.pharmacyID in [pharmacy.pharmacyID for pharmacy in patient.pharmacies])):
+        return True
+    return False
