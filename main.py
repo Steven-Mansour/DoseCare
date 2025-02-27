@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, redirect, url_for, request, flash, jsonify, session
-from models import User, Pill, Caregiver, Patient, PillSchedule, ScheduleProperty
+from models import User, Pill, Caregiver, Patient, PillSchedule, ScheduleProperty, Pharmacy, patient_pharmacy
 from app import db
 from flask_login import login_required, current_user
 from datetime import datetime, timedelta
@@ -34,16 +34,57 @@ def profile():
     return render_template("profile.html", user=current_user.get_info())
 
 
-# @main.route('/assignPharmacy')
-# @login_required
-# def assignPharmacy():
-#     if (current_user.get_info()['role'] != 'patient'):
-#         flash("You are not allowed to access this page")
-#         return redirect(url_for('main.home'))
-#     patient = current_user.get_info()['patientID']
-#     patient = Patient.query.first_or_404(patient)
-#     pharmacy = patient.pharmacy
-#     return render_template("assignPharmacy.html", user=current_user.get_info(), pharmacy=pharmacy)
+@main.route('/assignPharmacy')
+@login_required
+def assignPharmacy():
+    if (current_user.get_info()['role'] != 'patient'):
+        flash("You are not allowed to access this page")
+        return redirect(url_for('main.home'))
+    patient = current_user.get_info()['patientID']
+    patient = Patient.query.filter_by(patientID=patient).first()
+    pharmacies = patient.pharmacies
+    return render_template("assignPharmacy.html", user=current_user.get_info(), pharmaciesList=pharmacies)
+
+
+@main.route('/assignPharmacy', methods=['POST'])
+@login_required
+def assignPharmacyPost():
+    if (current_user.get_info()['role'] != 'patient'):
+        flash("You are not allowed to access this page")
+        return redirect(url_for('main.home'))
+    patient = current_user.get_info()['patientID']
+    patient = Patient.query.filter_by(patientID=patient).first()
+    pharmacy = Pharmacy.query.filter_by(
+        pharmacyID=request.form.get('pharmacyID')).first()
+    if pharmacy and pharmacy not in patient.pharmacies:
+        patient.pharmacies.append(pharmacy)
+        db.session.commit()
+        flash(f"Successfuly selected {pharmacy.name}")
+    else:
+        flash("Pharmacy already registered")
+    return redirect(url_for('main.assignPharmacy'))
+
+
+@main.route('/unassignPharmacy', methods=['POST'])
+@login_required
+def unassignPharmacy():
+    if (current_user.get_info()['role'] != 'patient'):
+        flash("You are not allowed to access this page")
+        return redirect(url_for('main.home'))
+    patient = current_user.get_info()['patientID']
+    patient = Patient.query.filter_by(patientID=patient).first()
+    pharmacy_id = request.form.get("pharmacy-ID")
+    print(pharmacy_id)
+    pharmacy = Pharmacy.query.filter_by(
+        pharmacyID=pharmacy_id).first()
+    if pharmacy and pharmacy not in patient.pharmacies:
+        flash(f"{pharmacy.name} is not registered!")
+    else:
+        patient.pharmacies.remove(pharmacy)
+        db.session.commit()
+        flash("Pharmacy unassigned successfully")
+        return redirect(url_for('main.assignPharmacy'))
+
 
 @main.route('/getNextDose/<int:patient_id>')
 @login_required
@@ -376,6 +417,29 @@ def search_caregiver():
         'lastName': caregiver.lastName,
         'id': caregiver.caregiverID
     } for caregiver in caregivers]
+
+    return jsonify(result)
+
+
+@main.route('/search_pharmacy')
+@login_required
+def search_pharmacy():
+    pharmacy_name = request.args.get('name', '')  # Correct parameter name
+
+    if not pharmacy_name:
+        return jsonify([])  # Return an empty list if no name is provided
+
+    # Query the database for caregivers that match the name (case-insensitive)
+    pharmacies = Pharmacy.query.filter(
+        (Pharmacy.name.ilike(f'%{pharmacy_name}%'))
+    ).all()
+
+    # Convert results to a list of dictionaries
+    result = [{
+        'name': pharmacy.name,
+        'location': pharmacy.location,
+        'id': pharmacy.pharmacyID
+    } for pharmacy in pharmacies]
 
     return jsonify(result)
 
