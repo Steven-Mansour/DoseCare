@@ -59,9 +59,12 @@ def assignPharmacyPost():
     if pharmacy and pharmacy not in patient.pharmacies:
         patient.pharmacies.append(pharmacy)
         db.session.commit()
-        flash(f"Successfuly selected {pharmacy.name}")
+        flash(f"Successfuly selected {pharmacy.name}", "success")
     else:
-        flash("Pharmacy already registered")
+        if pharmacy:
+            flash("Pharmacy already registered", "suggestion")
+        else:
+            flash("Pharmacy does not exist!", "failure")
     return redirect(url_for('main.assignPharmacy'))
 
 
@@ -69,7 +72,7 @@ def assignPharmacyPost():
 @login_required
 def unassignPharmacy():
     if (current_user.get_info()['role'] != 'patient'):
-        flash("You are not allowed to access this page")
+        flash("You are not allowed to access this page", "failure")
         return redirect(url_for('main.home'))
     patient = current_user.get_info()['patientID']
     patient = Patient.query.filter_by(patientID=patient).first()
@@ -82,7 +85,7 @@ def unassignPharmacy():
     else:
         patient.pharmacies.remove(pharmacy)
         db.session.commit()
-        flash("Pharmacy unassigned successfully")
+        flash("Pharmacy unassigned successfully", "success")
         return redirect(url_for('main.assignPharmacy'))
 
 
@@ -223,7 +226,7 @@ def editSchedule(schedule_id):
 @login_required
 def createSchedule_post(patient_id):
     if not isCarer(patient_id):
-        flash("You are not allowed to access this route")
+        flash("You are not allowed to access this route", "failure")
         return redirect(url_for('auth.login'))
     schedule = PillSchedule()
     patient = Patient.query.get_or_404(patient_id)
@@ -257,6 +260,7 @@ def createSchedule_post(patient_id):
                 time=time, dose=dose, scheduleID=schedule.scheduleID)
             db.session.add(new_schedule_property)
         db.session.commit()
+    flash(f"Schedule has been created successfully", "success")
     return redirect(url_for('main.schedule', patient_id=patient_id))
 
 
@@ -266,7 +270,7 @@ def editSchedule_post(schedule_id):
     schedule = PillSchedule.query.get_or_404(schedule_id)
     patient = schedule.patient
     if not isCarer(patient.patientID):
-        flash("You are not allowed to access this route")
+        flash("You are not allowed to access this route", "failure")
         return redirect(url_for('auth.login'))
     frequency = request.form.get('frequency')
     selected_days = [0] * int(frequency)
@@ -313,15 +317,15 @@ def editSchedule_post(schedule_id):
                 time=time, dose=dose, scheduleID=schedule.scheduleID)
             db.session.add(new_schedule_property)
         db.session.commit()
-    flash('The schedule has been updated')
-    return redirect(url_for('main.editSchedule', schedule_id=schedule_id))
+    flash('The schedule has been updated successfully', "success")
+    return redirect(url_for('main.schedule', patient_id=patient.patientID))
 
 
 @main.route('/createPill')
 @login_required
 def createPill():
     if current_user.get_info()['role'] != 'pharmacist':
-        flash("This page requires pharmacist priveleges")
+        flash("This page requires pharmacist priveleges", "failure")
         return redirect(url_for('auth.login'))
     return render_template("createPill.html", user=current_user.get_info())
 
@@ -343,7 +347,7 @@ def viewPatients():
 @login_required
 def assignCaregiver():
     if current_user.get_info()['role'] != 'patient':
-        flash('You need patient privileges!')
+        flash('You need patient privileges!', "failure")
         return redirect(url_for('auth.login'))
     caregiver = current_user.patients[0].caregiver
     return render_template("assignCaregiver.html", user=current_user.get_info(), caregiver=caregiver)
@@ -353,18 +357,19 @@ def assignCaregiver():
 @login_required
 def assignCaregiver_post():
     if current_user.get_info()['role'] != 'patient':
-        flash('You need patient privileges!')
+        flash('You need patient privileges!', "failure")
         return redirect(url_for('auth.login'))
     caregiverID = request.form.get('caregiverID')
     caregiverName = request.form.get('caregiver-info')
     if (not caregiverID):
-        flash("Caregiver does not exist")
+        flash("Caregiver does not exist", "failure")
         return redirect(url_for('main.assignCaregiver'))
     user = current_user
     patient = user.patients[0]
     patient.caregiverID = caregiverID
     db.session.commit()
-    flash(f"You have successfully assigned {caregiverName} as your caregiver")
+    flash(
+        f"You have successfully assigned {caregiverName} as your caregiver", "success")
 
     return render_template("assignCaregiver.html", user=current_user.get_info(), caregiver=patient.caregiver)
 
