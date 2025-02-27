@@ -18,7 +18,7 @@ def signup_post():
     user = User.query.filter_by(email=email).first()
     role = request.form.get('role')
     if user:
-        flash("The email is already registered!")
+        flash("The email is already registered!", "suggestion")
         return redirect(url_for('auth.signup'))
 
     user = User(email=email)
@@ -35,7 +35,7 @@ def signup_post():
                           caregiverID=None, userID=user.userID)
         db.session.add(patient)
         db.session.commit()
-        flash("You are registered as a patient.", "success")
+        flash("You successfully registered as a patient.", "success")
         return redirect(url_for('auth.login'))
 
     elif role == 'caregiver':
@@ -64,8 +64,7 @@ def signup_post():
         return redirect(url_for('auth.login'))
 
     else:
-        # Handle unknown role (optional)
-        flash("Invalid role selected.", "danger")
+        flash("Invalid role selected.", "error")
         return redirect(url_for('main.index'))
 
 
@@ -78,6 +77,7 @@ def login_post():
     user = User.query.filter_by(email=email).first()
 
     if not user or not user.check_password(password):
+        flash("Username or password are incorrect", "failure")
         return redirect('login')
 
     login_user(user, remember=remember)
@@ -93,4 +93,5 @@ def signup():
 @login_required
 def logout():
     logout_user()
+    flash("You have successfully logged out", "success")
     return redirect(url_for('auth.login'))
