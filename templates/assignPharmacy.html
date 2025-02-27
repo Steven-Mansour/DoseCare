@@ -3,15 +3,15 @@
 {%block pageContent%}
 
 <div class="flex flex-col h-screen items-center justify-center h-48 mb-4 rounded-sm bg-gray-50 dark:bg-gray-800">
-    <h1 class="text-2xl font-bold text-gray-900 dark:text-white text-center mb-6">Choose Your Caregiver</h1>
+    <h1 class="text-2xl font-bold text-gray-900 dark:text-white text-center mb-6">Choose Pharmacies</h1>
     <form class="max-w-md mx-auto" action="{{ url_for('main.assignPharmacy') }}" method="POST">
         <div class="relative z-0 w-full mb-5 group">
             <input type="text" name="pharmacy-info" id="pharmacy-info"
                 class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none dark:text-white dark:border-gray-600 dark:focus:border-blue-500 focus:outline-none focus:ring-0 focus:border-blue-600 peer"
                 placeholder=" " required />
-            <label for="caregiver-info"
+            <label for="pharmacy-info"
                 class="peer-focus:font-medium absolute text-sm text-gray-500 dark:text-gray-400 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-blue-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
-                Caregiver name</label>
+                Pharmacy name</label>
             <input name="pharmacyID" id="pharmacyID" class="hidden">
 
         </div>
@@ -28,6 +28,24 @@
 
 
     </form>
+    <div class="space-y-4 mt-10">
+        {% for pharmacy in pharmaciesList %}
+        <div class="flex items-center justify-between bg-blue-500 text-white px-4 py-2 rounded-2xl shadow-md w-64 opacity-80 
+                        hover:bg-blue-600 hover:shadow-lg hover:scale-105 transition-transform duration-200">
+            <span class="font-semibold">{{ pharmacy.name }}</span>
+            <form action="{{url_for('main.unassignPharmacy')}}" method="POST">
+                <input class="hidden" type="hidden" name="pharmacy-ID" value={{pharmacy.pharmacyID}}>
+                <button class="focus:outline-none" type="submit">
+                    <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </form>
+        </div>
+        {% endfor %}
+    </div>
 
     {% with messages = get_flashed_messages()%}
     {%if messages%}
@@ -36,24 +54,21 @@
     </div>
     {%endif%}
     {%endwith%}
-    {%if pharmacy%}
-    <h1 class=" mt-4 text-l font-bold text-gray-900 dark:text-white text-center mb-6">The pharmacy monitoring you is:
-        {{pharmacy.name}}</h1>
-    {%endif%}
+
 
 </div>
 
 <script>
-    function searchCaregiver() {
-        const caregiverInput = document.getElementById('caregiver-info').value;
+    function searchpharmacy() {
+        const pharmacyInput = document.getElementById('pharmacy-info').value;
 
-        if (caregiverInput.length < 1) {  // Trigger search only after at least 1 character
+        if (pharmacyInput.length < 1) {  // Trigger search only after at least 1 character
             document.getElementById('search-results').innerHTML = '';
             document.getElementById('search-results').classList.add('hidden');
             return;
         }
 
-        fetch(`/search_caregiver?name=${encodeURIComponent(caregiverInput)}`)
+        fetch(`/search_pharmacy?name=${encodeURIComponent(pharmacyInput)}`)
             .then(response => response.json())
             .then(data => {
                 const resultsContainer = document.getElementById('search-results');
@@ -61,30 +76,30 @@
                 resultsContainer.classList.remove('hidden'); // Show results container
 
                 if (data.length > 0) {
-                    data.forEach(caregiver => {
-                        const caregiverItem = document.createElement('div');
-                        caregiverItem.classList.add('caregiver-item', 'w-full', 'cursor-pointer', 'py-2', 'px-4', 'text-md', 'text-gray-900', 'hover:bg-blue-100', 'hover:text-blue-600', 'focus:outline-none');
-                        caregiverItem.innerHTML = `<strong>${caregiver.firstName} ${caregiver.lastName}</strong><span class="ml-2 text-sm text-gray-500">(${caregiver.id})</span>`;
+                    data.forEach(pharmacy => {
+                        const pharmacyItem = document.createElement('div');
+                        pharmacyItem.classList.add('pharmacy-item', 'w-full', 'cursor-pointer', 'py-2', 'px-4', 'text-md', 'text-gray-900', 'hover:bg-blue-100', 'hover:text-blue-600', 'focus:outline-none');
+                        pharmacyItem.innerHTML = `<strong>${pharmacy.name}</strong><br><span class=" text-sm text-gray-500">${pharmacy.location}</span>`;
 
-                        // Store the caregiver name when clicked
-                        caregiverItem.onclick = function () {
-                            document.getElementById('caregiver-info').value = `${caregiver.firstName} ${caregiver.lastName}`;
+                        // Store the pharmacy name when clicked
+                        pharmacyItem.onclick = function () {
+                            document.getElementById('pharmacy-info').value = `${pharmacy.name} ${pharmacy.location}`;
                             document.getElementById('search-results').innerHTML = ''; // Hide results after selection
                             document.getElementById('search-results').classList.add('hidden'); // Hide results container
-                            document.getElementById('caregiverID').value = caregiver.id;
+                            document.getElementById('pharmacyID').value = pharmacy.id;
                         };
 
-                        resultsContainer.appendChild(caregiverItem);
+                        resultsContainer.appendChild(pharmacyItem);
                     });
                 } else {
-                    resultsContainer.innerHTML = '<div class="py-2 px-4 text-sm text-gray-600">No caregivers found</div>';
+                    resultsContainer.innerHTML = '<div class="py-2 px-4 text-sm text-gray-600">No pharmacies found</div>';
                 }
             })
-            .catch(error => console.error('Error fetching caregivers:', error));
+            .catch(error => console.error('Error fetching pharmacies:', error));
     }
 
     // Attach event listener to input field
-    document.getElementById('caregiver-info').addEventListener('input', searchCaregiver);
+    document.getElementById('pharmacy-info').addEventListener('input', searchpharmacy);
 </script>
 
 {%endblock%}
