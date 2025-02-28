@@ -268,7 +268,8 @@ def createSchedule_post(patient_id):
                 time=time, dose=dose, scheduleID=schedule.scheduleID)
             db.session.add(new_schedule_property)
         db.session.commit()
-    flash(f"Schedule has been created successfully", "success")
+    flash(
+        f"Schedule has been created successfully: \n Make sure to use the disk named '{schedule.pill.shape[0].capitalize()}{schedule.pill.size}'", "success")
     return redirect(url_for('main.schedule', patient_id=patient_id))
 
 
