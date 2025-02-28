@@ -26,7 +26,7 @@
             class="grid gap-x-6 grid-cols-[2fr_0.5fr_1fr_1fr_0.5fr_0.5fr] md:grid-cols-[1fr_0.5fr_1fr_1fr_0.5fr_0.5fr] text-center text-blue-600 items-center px-4  font-semibold">
             <div>Pill</div>
             <div>Disk</div>
-            <div>Start Date</div>
+            <div>Container Nb</div>
             <div>End Date</div>
             <div>Qty</div>
         </div>
@@ -44,7 +44,7 @@
                         href="{{ url_for('main.editSchedule', schedule_id=schedule.scheduleID) }}">{{schedule.pill.name}}</a>
                 </div>
                 <div class="text-md text-gray-600">{{ schedule.pill.shape[0]|capitalize}}{{ schedule.pill.size}}</div>
-                <div class="text-md text-gray-600">{{ schedule.startDate}}</div>
+                <div class="text-md text-gray-600">{{ schedule.containerNb}}</div>
                 <div class="text-md text-gray-600">{{ schedule.endDate }}</div>
                 <div class="text-md text-gray-600">{{ schedule.remainingQty}}</div>
                 <div class="flex items-center justify-center">

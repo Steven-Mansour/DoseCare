@@ -121,16 +121,6 @@ def viewCalendar(patient_id):
                            current_day=monthlySched["current_day"], patient=patient)
 
 
-@main.route('/createSchedule/<int:patient_id>')
-@login_required
-def createSchedule(patient_id):
-    if not isCarer(patient_id):
-        flash("You are not allowed to access this route")
-        return redirect(url_for('auth.login'))
-    patient_id = patient_id
-    return render_template('createSchedule.html', user=current_user.get_info(), patient_id=patient_id)
-
-
 @main.route('/deleteSchedule/<int:schedule_id>', methods=['POST'])
 @login_required
 def deleteSchedule(schedule_id):
@@ -226,6 +216,21 @@ def editSchedule(schedule_id):
     return redirect(url_for('main.home'))
 
 
+@main.route('/createSchedule/<int:patient_id>')
+@login_required
+def createSchedule(patient_id):
+    if not isCarer(patient_id):
+        flash("You are not allowed to access this route")
+        return redirect(url_for('auth.login'))
+    patient_id = patient_id
+    patient = Patient.query.filter_by(patientID=patient_id).first()
+    unusedCont = patient.get_unused_container()
+    if unusedCont == -1:
+        flash("You need to delete a schedule before creating a new one.", "failure")
+        return redirect(url_for('main.home'))
+    return render_template('createSchedule.html', user=current_user.get_info(), patient_id=patient_id)
+
+
 @main.route('/createSchedule/<int:patient_id>', methods=['POST'])
 @login_required
 def createSchedule_post(patient_id):
@@ -254,6 +259,7 @@ def createSchedule_post(patient_id):
     schedule.containerNb = containerNb
     schedule.frequency = frequency
     schedule.day = selected_days
+   # return redirect(url_for('main.createSchedule', schedule=schedule, patient_id=patient_id))
     db.session.add(schedule)
     db.session.commit()
     # Assuming only time and dose are part of the form
@@ -269,7 +275,9 @@ def createSchedule_post(patient_id):
             db.session.add(new_schedule_property)
         db.session.commit()
     flash(
-        f"Schedule has been created successfully: \n Make sure to use the disk named '{schedule.pill.shape[0].capitalize()}{schedule.pill.size}'", "success")
+        f"""Schedule has been created successfully: \n Make sure to use the disk named
+        '{schedule.pill.shape[0].capitalize()}{schedule.pill.size}' in container {schedule.containerNb}""", "success")
+
     return redirect(url_for('main.schedule', patient_id=patient_id))
 
 
