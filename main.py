@@ -185,13 +185,14 @@ def schedule(patient_id):
     patient = Patient.query.filter_by(patientID=patient_id).first()
     if patient:
         schedules = patient.pill_schedules
+        freeContainer = patient.get_unused_container()
         session['breadcrumbs'] = [
             {'name': 'Home', 'url': url_for('main.home')},
             {'name': 'Patients', 'url': url_for('main.viewPatients')},
             {'name': 'Schedules', 'url': url_for(
                 'main.schedule', patient_id=patient_id)}
         ]
-        return render_template('schedule.html', patient=patient, user=current_user.get_info(), schedules=schedules)
+        return render_template('schedule.html', patient=patient, freeContainer=freeContainer, user=current_user.get_info(), schedules=schedules)
     else:
         flash("Patient does not exist")
     return redirect(url_for('main.home'))

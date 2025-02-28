@@ -57,12 +57,29 @@
         </div>
         {% endfor %}
 
+
         <div class="flex gap-x-4 justify-center mt-6">
-            <!-- Add New Schedule Button -->
+            {% if freeContainer != -1 %}
+            <!-- Add New Schedule Button (Enabled) -->
             <a href="{{ url_for('main.createSchedule', patient_id=patient.patientID) }}"
                 class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">
                 Add New Schedule
             </a>
+            {% else %}
+            <!-- Disabled Button with Tooltip -->
+            <div class="relative group">
+                <button disabled class="px-4 py-2 bg-gray-400 text-white rounded-md cursor-not-allowed"
+                    aria-disabled="true">
+                    Add New Schedule
+                </button>
+                <!-- Tooltip -->
+                <div
+                    class="absolute left-1/2 transform -translate-x-1/2 mt-2 w-64 p-2 bg-gray-700 text-white text-sm rounded-md opacity-0 group-hover:opacity-100 transition-opacity">
+                    There are no unused containers. Make sure to delete another schedule before creating a new one.
+                </div>
+            </div>
+            {% endif %}
+
             <!-- View Calendar -->
             <a href="{{ url_for('main.viewCalendar', patient_id=patient.patientID) }}"
                 class="px-4 py-2 text-blue-700 rounded-md hover:text-blue-400 bg-gray-200 hover:bg-gray-300 hover:text-blue-100">
