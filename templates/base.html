@@ -199,6 +199,22 @@
                 }
             });
         </script>
+        <script>
+            function hideAlert(alertId, timeout = 3000) {
+                setTimeout(() => {
+                    const alertDiv = document.getElementById(alertId);
+                    if (alertDiv) {
+                        alertDiv.style.transition = "opacity 0.5s ease-out";
+                        alertDiv.style.opacity = "0";
+                        setTimeout(() => alertDiv.style.display = "none", 500); // Hides after fade-out
+                    }
+                }, timeout);
+            }
+
+            // Call the function for alert-#1
+            hideAlert("alert-1", 6000); // 3 seconds timeout
+        </script>
+
 </body>
 
 </html>

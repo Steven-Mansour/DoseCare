@@ -295,7 +295,7 @@ class Patient(db.Model):
                 container_status[schedule.containerNb-1] = 0
         for i in range(maxContainers):
             if container_status[i] == 1:
-                return i
+                return i+1
 
         return -1  # Return -1 if no free container is found
 
