@@ -285,6 +285,20 @@ class Patient(db.Model):
                         "pill": schedule.pill.name})
         return qty
 
+    def get_unused_container(self):
+        maxContainers = 3
+        schedules = self.pill_schedules
+        container_status = [1] * maxContainers
+
+        for schedule in schedules:
+            if 1 <= schedule.containerNb <= maxContainers:
+                container_status[schedule.containerNb-1] = 0
+        for i in range(maxContainers):
+            if container_status[i] == 1:
+                return i+1
+
+        return -1  # Return -1 if no free container is found
+
 
 class Pharmacy(Carer):
     pharmacyID = db.Column(db.Integer, primary_key=True, autoincrement=True)

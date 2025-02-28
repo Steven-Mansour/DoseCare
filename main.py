@@ -121,16 +121,6 @@ def viewCalendar(patient_id):
                            current_day=monthlySched["current_day"], patient=patient)
 
 
-@main.route('/createSchedule/<int:patient_id>')
-@login_required
-def createSchedule(patient_id):
-    if not isCarer(patient_id):
-        flash("You are not allowed to access this route")
-        return redirect(url_for('auth.login'))
-    patient_id = patient_id
-    return render_template('createSchedule.html', user=current_user.get_info(), patient_id=patient_id)
-
-
 @main.route('/deleteSchedule/<int:schedule_id>', methods=['POST'])
 @login_required
 def deleteSchedule(schedule_id):
@@ -179,19 +169,23 @@ def lowSupplySchedules():
 @main.route('/schedule/<int:patient_id>')
 @login_required
 def schedule(patient_id):
+    if (current_user.get_info()['role'] not in ['caregiver', 'pharmacist']):
+        flash("You do not have privileges to access this page", "failure")
+        return redirect(url_for('main.home'))
     if not isCarer(patient_id):
         flash("You are not allowed to access this route")
         return redirect(url_for('auth.login'))
     patient = Patient.query.filter_by(patientID=patient_id).first()
     if patient:
         schedules = patient.pill_schedules
+        freeContainer = patient.get_unused_container()
         session['breadcrumbs'] = [
             {'name': 'Home', 'url': url_for('main.home')},
             {'name': 'Patients', 'url': url_for('main.viewPatients')},
             {'name': 'Schedules', 'url': url_for(
                 'main.schedule', patient_id=patient_id)}
         ]
-        return render_template('schedule.html', patient=patient, user=current_user.get_info(), schedules=schedules)
+        return render_template('schedule.html', patient=patient, freeContainer=freeContainer, user=current_user.get_info(), schedules=schedules)
     else:
         flash("Patient does not exist")
     return redirect(url_for('main.home'))
@@ -222,6 +216,21 @@ def editSchedule(schedule_id):
     return redirect(url_for('main.home'))
 
 
+@main.route('/createSchedule/<int:patient_id>')
+@login_required
+def createSchedule(patient_id):
+    if not isCarer(patient_id):
+        flash("You are not allowed to access this route")
+        return redirect(url_for('auth.login'))
+    patient_id = patient_id
+    patient = Patient.query.filter_by(patientID=patient_id).first()
+    unusedCont = patient.get_unused_container()
+    if unusedCont == -1:
+        flash("You need to delete a schedule before creating a new one.", "failure")
+        return redirect(url_for('main.home'))
+    return render_template('createSchedule.html', user=current_user.get_info(), patient_id=patient_id)
+
+
 @main.route('/createSchedule/<int:patient_id>', methods=['POST'])
 @login_required
 def createSchedule_post(patient_id):
@@ -233,6 +242,10 @@ def createSchedule_post(patient_id):
     pillID = request.form.get('pill_id')
     frequency = request.form.get('frequency')
     selected_days = [0] * int(frequency)
+    containerNb = patient.get_unused_container()
+    if containerNb == -1:
+        flash("You cannot create more schedules, make sure to delete one before you proceed", "failure")
+        return redirect(url_for('main.createSchedule'))
     # Loop through each checkbox and update the corresponding index to 1 if checked
     for i in range(int(frequency)):
         if f"day_{i}" in request.form:  # If the checkbox for that day is checked
@@ -243,9 +256,10 @@ def createSchedule_post(patient_id):
     schedule.endDate = request.form.get('endDate')
     schedule.expiryDate = request.form.get('expiryDate')
     schedule.remainingQty = request.form.get('remainingQty')
-    schedule.containerNb = request.form.get('containerNb')
+    schedule.containerNb = containerNb
     schedule.frequency = frequency
     schedule.day = selected_days
+   # return redirect(url_for('main.createSchedule', schedule=schedule, patient_id=patient_id))
     db.session.add(schedule)
     db.session.commit()
     # Assuming only time and dose are part of the form
@@ -260,7 +274,10 @@ def createSchedule_post(patient_id):
                 time=time, dose=dose, scheduleID=schedule.scheduleID)
             db.session.add(new_schedule_property)
         db.session.commit()
-    flash(f"Schedule has been created successfully", "success")
+    flash(
+        f"""Schedule has been created successfully: \n Make sure to use the disk named
+        '{schedule.pill.shape[0].capitalize()}{schedule.pill.size}' in container {schedule.containerNb}""", "success")
+
     return redirect(url_for('main.schedule', patient_id=patient_id))
 
 
