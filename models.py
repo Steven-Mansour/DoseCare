@@ -116,6 +116,7 @@ class Patient(db.Model):
     patientID = db.Column(db.Integer, primary_key=True, autoincrement=True)
     firstName = db.Column(db.String(100), nullable=False)
     lastName = db.Column(db.String(100), nullable=False)
+    selfCarer = db.Column(db.Boolean, nullable=False, default=False)
     emergencyContactNb = db.Column(db.String(15), nullable=False)
     caregiverID = db.Column(db.Integer, db.ForeignKey(
         'caregiver.caregiverID'), nullable=True)  # Foreign Key from CAREGIVER
