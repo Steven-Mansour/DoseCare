@@ -11,13 +11,13 @@
         <thead class="bg-blue-700 dark:bg-blue-900">
             <tr>
                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
-                    Patient Name
+                    Patient
+                </th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
+                    Pill
                 </th>
                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
                     End Date
-                </th>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
-                    Pill Name
                 </th>
                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
                     Days Remaining
@@ -32,14 +32,15 @@
                         patient.lastName }}</a>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
-                    {{ schedule.endDate }}
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
                     {{ schedule.pill.name }}
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
-                    {{ days if days >= 0 else "Ended {} {}".format(-days, "day ago" if days == -1 else "days
-                    ago") }}
+                    {{ schedule.endDate }}
+                </td>
+                <td class="px-6 py-4 font-semibold whitespace-nowrap text-sm 
+                            {{ 'text-red-600' if days <= 3 else 'text-gray-500 dark:text-gray-300' }}">
+                    {{ days if days >= 0 else "Ended {} {}".format(-days, "day ago" if days == -1 else "days ago")
+                    }}
                 </td>
             </tr>
             {% endfor %}

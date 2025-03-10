@@ -20,43 +20,39 @@
     <h1 class="text-4xl font-bold text-gray-900 dark:text-white text-center mb-6">{{patient.firstName|capitalize}}'s
         Schedules</h1>
     <br> <br>
-    <div class="flex flex-col gap-4 ">
+    <div class="flex flex-col gap-4">
         <!-- Header Row -->
         <div
-            class="grid gap-x-6 grid-cols-[2fr_0.5fr_1fr_1fr_0.5fr_0.5fr] md:grid-cols-[1fr_0.5fr_1fr_1fr_0.5fr_0.5fr] text-center text-blue-600 items-center px-4  font-semibold">
+            class="text-sm md:text-md grid gap-x-2 md:gap-x-6 grid-cols-[1fr_0.5fr_1fr_0.5fr_1fr_0.5fr] md:grid-cols-[1.5fr_0.5fr_2fr_0.5fr_1fr_0.5fr] text-center text-blue-600 items-center px-4  font-semibold">
             <div>Pill</div>
-            <div>Disk</div>
-            <div>Container Nb</div>
-            <div>End Date</div>
             <div>Qty</div>
+            <div>End Date</div>
+            <div>Disk</div>
+            <div>Container</div>
         </div>
 
-        <!-- Patient Rows -->
-        <div>
 
-        </div>
         {% for schedule in schedules %}
-        <div>
-            <div
-                class="grid gap-x-6 grid-cols-[2fr_0.5fr_1fr_1fr_0.5fr_0.5fr] md:grid-cols-[1fr_0.5fr_1fr_1fr_0.5fr_0.5fr] text-center items-center p-4 border border-gray-300 rounded-lg bg-gray-100">
-                <div class="text-md font-semibold">
-                    <a
-                        href="{{ url_for('main.editSchedule', schedule_id=schedule.scheduleID) }}">{{schedule.pill.name}}</a>
-                </div>
-                <div class="text-md text-gray-600">{{ schedule.pill.shape[0]|capitalize}}{{ schedule.pill.size}}</div>
-                <div class="text-md text-gray-600">{{ schedule.containerNb}}</div>
-                <div class="text-md text-gray-600">{{ schedule.endDate }}</div>
-                <div class="text-md text-gray-600">{{ schedule.remainingQty}}</div>
-                <div class="flex items-center justify-center">
-                    <form action="{{ url_for('main.deleteSchedule', schedule_id=schedule.scheduleID) }}" method="post">
-                        <button type="submit" class="text-white bg-red-500 hover:bg-red-700 rounded-md p-2">
-                            <i class="fas fa-trash-alt"></i>
-                        </button>
-                    </form>
-                </div>
-            </div>
 
+        <div
+            class="grid text-sm md:text-md gap-x-2 md:gap-x-6 grid-cols-[1fr_0.5fr_1fr_0.5fr_1fr_0.5fr] md:grid-cols-[1.5fr_0.5fr_2fr_0.5fr_1fr_0.5fr] text-center items-center p-4 border border-gray-300 rounded-lg bg-gray-100">
+            <div class="font-semibold">
+                <a href="{{ url_for('main.editSchedule', schedule_id=schedule.scheduleID) }}">{{schedule.pill.name}}</a>
+            </div>
+            <div class=" text-gray-600">{{ schedule.remainingQty}}</div>
+            <div class=" text-gray-600">{{ schedule.endDate }}</div>
+            <div class=" text-gray-600">{{ schedule.pill.shape[0]|capitalize}}{{ schedule.pill.size}}</div>
+            <div class=" text-gray-600">{{ schedule.containerNb}}</div>
+
+            <div class="flex items-center justify-center">
+                <form action="{{ url_for('main.deleteSchedule', schedule_id=schedule.scheduleID) }}" method="post">
+                    <button type="submit" class="text-red-600  hover:bg-red-700 hover:text-white rounded-md p-2">
+                        <i class="fas fa-trash-alt"></i>
+                    </button>
+                </form>
+            </div>
         </div>
+
         {% endfor %}
 
 
