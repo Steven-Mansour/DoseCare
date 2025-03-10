@@ -1939,6 +1939,10 @@ video {
   margin-right: 0.5rem;
 }
 
+.mb-10 {
+  margin-bottom: 2.5rem;
+}
+
 .block {
   display: block;
 }
@@ -2234,6 +2238,10 @@ video {
 
 .grid-cols-\[1fr_0\.5fr_1fr_0\.5fr_1fr_0\.5fr\] {
   grid-template-columns: 1fr 0.5fr 1fr 0.5fr 1fr 0.5fr;
+}
+
+.flex-row {
+  flex-direction: row;
 }
 
 .flex-col {
@@ -2664,6 +2672,11 @@ video {
 .text-xs {
   font-size: 0.75rem;
   line-height: 1rem;
+}
+
+.text-3xl {
+  font-size: 1.875rem;
+  line-height: 2.25rem;
 }
 
 .font-bold {
