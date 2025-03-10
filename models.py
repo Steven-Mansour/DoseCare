@@ -54,11 +54,14 @@ class User(db.Model, UserMixin):
     def get_info(self):
         """Check if the user is a patient, caregiver, or pharmacist and return a dictionary."""
         if self.patients:  # Checks if the user has an associated patient record
-            return {"role": "patient", "name": self.patients[0].firstName, "patientID": self.patients[0].patientID, "email": self.email, }
+            return {"role": "patient", "name": self.patients[0].firstName, "lastName": self.patients[0].lastName,  "patientID": self.patients[0].patientID,
+                    "email": self.email, "phone": self.patients[0].emergencyContactNb}
         elif self.caregivers:  # Checks if the user has an associated caregiver record
-            return {"role": "caregiver", "name": self.caregivers[0].firstName, "caregiverID": self.caregivers[0].caregiverID, "email": self.email, }
+            return {"role": "caregiver", "name": self.caregivers[0].firstName, "lastName": self.caregivers[0].lastName, "caregiverID": self.caregivers[0].caregiverID,
+                    "email": self.email, "phone": self.caregivers[0].phoneNb}
         elif self.pharmacies:  # Checks if the user has an associated pharmacy record
-            return {"role": "pharmacist", "name": self.pharmacies[0].name, "pharmacyID": self.pharmacies[0].pharmacyID, "email": self.email, }
+            return {"role": "pharmacist", "name": self.pharmacies[0].name, "pharmacyID": self.pharmacies[0].pharmacyID,
+                    "email": self.email, "phone": self.pharmacies[0].phoneNb, "location": self.pharmacies[0].location}
         # If the user doesn't belong to any category
         return {"role": "unknown", "name": "N/A"}
 

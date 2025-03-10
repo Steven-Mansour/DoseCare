@@ -85,7 +85,7 @@ def unassignPharmacy():
     else:
         patient.pharmacies.remove(pharmacy)
         db.session.commit()
-        flash("Pharmacy unassigned successfully", "success")
+        flash("Pharmacy has been successfully removed", "success")
         return redirect(url_for('main.assignPharmacy'))
 
 
