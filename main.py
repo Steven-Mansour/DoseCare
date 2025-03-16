@@ -28,10 +28,12 @@ def home():
     return render_template("home.html", user=current_user.get_stats())
 
 
-@main.route('/profile')
+@main.route('/profile/<int:user_id>')
 @login_required
-def profile():
-    return render_template("profile.html", user=current_user.get_info())
+def profile(user_id):
+    # user = User.query.filter_by(userID=user_id).first()
+    user = current_user
+    return render_template("profile.html", user=user.get_info())
 
 
 @main.route('/assignPharmacy')
@@ -259,7 +261,7 @@ def createSchedule_post(patient_id):
     schedule.containerNb = containerNb
     schedule.frequency = frequency
     schedule.day = selected_days
-   # return redirect(url_for('main.createSchedule', schedule=schedule, patient_id=patient_id))
+    # return redirect(url_for('main.createSchedule', schedule=schedule, patient_id=patient_id))
     db.session.add(schedule)
     db.session.commit()
     # Assuming only time and dose are part of the form
@@ -358,6 +360,22 @@ def viewPatients():
     ]
     carer = current_user.caregivers[0] if current_user.caregivers else current_user.pharmacies[0]
     return render_template("viewPatients.html", user=current_user.get_info(), patients=carer.patients)
+
+
+@main.route('/removeCaregiver/<int:patient_id>', methods=['POST'])
+@login_required
+def removeCaregiver(patient_id):
+    if current_user.get_info()['role'] != 'patient':
+        flash('You need patient privileges!', "failure")
+        return redirect(url_for('main.home'))
+    if current_user.get_info()['patientID'] != patient_id:
+        flash("You are not allowed to change another patient's data!", "failure")
+        return redirect(url_for('main.home'))
+    patient = Patient.query.filter_by(patientID=patient_id).first()
+    patient.caregiver = None
+    db.session.commit()
+    flash("Successfully removed caregiver", "success")
+    return redirect(url_for('main.assignCaregiver'))
 
 
 @main.route('/assignCaregiver')

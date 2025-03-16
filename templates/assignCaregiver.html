@@ -37,8 +37,19 @@
     {%endif%}
     {%endwith%} -->
     {%if caregiver%}
-    <h1 class=" mt-4 text-l font-bold text-gray-900 dark:text-white text-center mb-6">Your current caregiver is:
-        {{caregiver.firstName}} {{caregiver.lastName}}</h1>
+    <div class="flex flex-row items-center justify-center">
+        <h1 class=" mt-4 text-l font-bold text-gray-900 dark:text-white text-center mb-6">
+            <span class="font-normal">Your current caregiver is:</span>
+            {{caregiver.firstName}} {{caregiver.lastName}}
+        </h1>
+        <form action="{{ url_for('main.removeCaregiver', patient_id=user.patientID) }}" method="post">
+            <button type="submit"
+                class="text-2xl ml-1 pb-2 font-bold text-gray-700 hover:text-red-500 focus:outline-none">
+                &times;
+            </button>
+        </form>
+    </div>
+
     {%endif%}
 
 </div>
