@@ -55,7 +55,7 @@ class User(db.Model, UserMixin):
         """Check if the user is a patient, caregiver, or pharmacist and return a dictionary."""
         if self.patients:  # Checks if the user has an associated patient record
             return {"role": "patient", "name": self.patients[0].firstName, "lastName": self.patients[0].lastName,  "patientID": self.patients[0].patientID,
-                    "email": self.email, "phone": self.patients[0].emergencyContactNb, "userID": self.userID}
+                    "email": self.email, "phone": self.patients[0].emergencyContactNb, "userID": self.userID, "selfCarer": self.patients[0].selfCarer}
         elif self.caregivers:  # Checks if the user has an associated caregiver record
             return {"role": "caregiver", "name": self.caregivers[0].firstName, "lastName": self.caregivers[0].lastName, "caregiverID": self.caregivers[0].caregiverID,
                     "email": self.email, "phone": self.caregivers[0].phoneNb, "userID": self.userID}
