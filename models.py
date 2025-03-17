@@ -324,7 +324,7 @@ class Patient(db.Model):
             days_difference = date_difference.days
             if days[days_difference % frequency] == 1:
                 for prop in schedule_properties:
-                    if current_time < prop.time:
+                    if current_time > prop.time:
                         status = "done"
                     else:
                         status = "pending"

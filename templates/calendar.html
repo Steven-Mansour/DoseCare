@@ -6,6 +6,7 @@
     class="flex flex-col h-screen items-center justify-center h-48 mb-4 rounded-sm bg-gray-50 dark:bg-gray-800 overflow-x-scroll">
 
     <div class="max-w-4xl mx-auto  dark:bg-gray-800 bg-white shadow-lg rounded-lg p-6 ">
+
         <h2 class="text-center mb-6 text-2xl font-bold text-gray-700 dark:text-white rounded-lg">
             {{patient.firstName}}'s
             Schedule for {{month}} {{ year }}
@@ -20,11 +21,13 @@
                     {% endfor %}
                 </tr>
             </thead>
+
             <!-- Add a scrollable div around tbody -->
             <div class="">
                 <tbody>
                     {% for week in cal %}
                     <tr>
+
                         {% for day in week %}
                         {% if day == 0 %}
                         <td class="border border-gray-300 dark:border-gray-500 bg-gray-100 dark:bg-gray-900"></td>
@@ -32,13 +35,16 @@
                         {%if day == current_day%}
 
                         {%endif%}
+
                         <td class="pt-0 p-2 text-sm dark:text-white border border-gray-300 align-top dark:border-gray-500
                         {% if day == current_day %} bg-blue-100 dark: bg-blue-400 {% endif %}">
-                            <div class="text-lg text-blue-700 font-semibold">{{ day }}</div>
-
-                            {%for pill in daily_pills[day]%}
-                            <div>{{pill}}</div>
-                            {%endfor%}
+                            <!-- Trigger Anchor (e.g., within a loop for each day) -->
+                            <a href="#" onclick="openModal('{{ day }}','{{month}} ', this, event); return false;">
+                                <div class="text-lg text-blue-700 font-semibold">{{ day }}</div>
+                                {% for pill in daily_pills[day] %}
+                                <div>{{ pill }}</div>
+                                {% endfor %}
+                            </a>
                         </td>
                         {% endif %}
                         {% endfor %}
@@ -48,8 +54,51 @@
             </div>
         </table>
     </div>
-
-
+    <div id="popupModal"
+        class="absolute inset-0 flex z-100 items-center justify-center bg-gray-900 bg-opacity-50 hidden">
+        <div class="bg-white md:ml-64 rounded-lg p-6 w-3/4 md:w-2/5">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-semibold" id="modalTitle"></h2>
+                <button onclick="closeModal()" class="text-gray-700 text-2xl leading-none">&times;</button>
+            </div>
+            <div id="modalContent" class="space-y-2">
+                <!-- Modal content will be inserted here -->
+            </div>
+        </div>
+    </div>
 </div>
+
+<script>
+    function openModal(day, month, anchor, event) {
+        event.preventDefault();
+        event.stopPropagation();
+        document.getElementById('modalTitle').textContent = month + " " + day;
+        document.getElementById('popupModal').classList.remove('hidden');
+
+        // Fetch data from the server and build HTML content
+        fetch('/popup-opened?day=' + encodeURIComponent(day))
+            .then(response => response.json())
+            .then(data => {
+                let contentHtml = '';
+                data.message.forEach(item => {
+                    contentHtml += `
+                <div class="${item.status === 'done' ? 'opacity-50' : 'opacity-100'} pill-item grid grid-cols-4 items-center border-b border-gray-200 py-2">
+                    <div class="pill-name font-semibold text-left">${item.name}</div>
+                    <div class="pill-dose text-center">Dose: ${item.dose}</div>
+                    <div class="pill-time text-center">${item.time}</div>
+                    <div class="pill-status text-right ${item.status === 'done' ? 'text-green-500' : 'text-red-500'}">${item.status}</div>
+                </div>
+              `;
+                });
+                document.getElementById('modalContent').innerHTML = contentHtml;
+            })
+            .catch(error => console.error('Error:', error));
+    }
+
+    function closeModal() {
+        document.getElementById('popupModal').classList.add('hidden');
+    }
+</script>
+
 
 {%endblock%}

@@ -8,6 +8,17 @@ from messages import sendMessage
 main = Blueprint('main', __name__)
 
 
+@main.route('/popup-opened')
+def popup_opened():
+    day = request.args.get('day')
+    patient = Patient.query.filter_by(patientID=2).first()
+
+    schedule = patient.get_days_schedule()
+
+    # Return a JSON response (you can customize this as needed)
+    return jsonify({'status': 'success', 'message': schedule})
+
+
 @main.route('/')
 def index():
     return redirect(url_for('main.home'))
