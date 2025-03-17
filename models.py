@@ -69,7 +69,8 @@ class User(db.Model, UserMixin):
         """Check if the user is a patient, caregiver, or pharmacist and return a dictionary."""
         if self.patients:  # Checks if the user has an associated patient record
             return {"role": "patient", "name": self.patients[0].firstName, "patientID": self.patients[0].patientID, "email": self.email,  "patient": self.patients[0],
-                    "caregiver": self.patients[0].caregiver, "nextDose": self.patients[0].get_next_dose(), "remQty": self.patients[0].get_qty_per_container(), "userID": self.userID}
+                    "caregiver": self.patients[0].caregiver, "nextDose": self.patients[0].get_next_dose(), "remQty": self.patients[0].get_qty_per_container(), "userID": self.userID,
+                    "selfCarer": self.patients[0].selfCarer}
         elif self.caregivers:  # Checks if the user has an associated caregiver record
             return {"role": "caregiver", "name": self.caregivers[0].firstName, "caregiverID": self.caregivers[0].caregiverID, "email": self.email,
                     "caregiver": self.caregivers[0], "nbOfPatients": self.caregivers[0].get_nb_of_patients(),
@@ -303,6 +304,39 @@ class Patient(db.Model):
                 return i+1
 
         return -1  # Return -1 if no free container is found
+
+    def get_days_schedule(self):
+        current = datetime.now()
+        current_date = current.date()
+        current_time = current.time()
+        schedules = self.pill_schedules
+        daily_pills = []
+
+        for schedule in schedules:
+            start_date = schedule.startDate
+            end_date = schedule.endDate
+            frequency = schedule.frequency
+            days = schedule.day
+            if current_date < start_date or current_date > end_date:
+                continue
+            schedule_properties = schedule.schedule_properties
+            date_difference = current_date - start_date
+            days_difference = date_difference.days
+            if days[days_difference % frequency] == 1:
+                for prop in schedule_properties:
+                    if current_time < prop.time:
+                        status = "done"
+                    else:
+                        status = "pending"
+                    pill_info = {
+                        "time": prop.time.strftime("%H:%M"),
+                        "status": status,
+                        "dose": prop.dose,
+                        "name": schedule.pill.name
+                    }
+                    daily_pills.append(pill_info)
+
+        return sorted(daily_pills, key=lambda prop: prop['time'])
 
 
 class Pharmacy(Carer):
