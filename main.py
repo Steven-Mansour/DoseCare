@@ -8,14 +8,16 @@ from messages import sendMessage
 main = Blueprint('main', __name__)
 
 
-@main.route('/popup-opened')
-def popup_opened():
+@main.route('/popup-opened/<int:patient_id>')
+@login_required
+def popup_opened(patient_id):
+    if not isCarer(patient_id):
+        flash("You are not allowed to access this page", "failure")
+        return redirect(url_for('main.home'))
+    month = request.args.get('month')
     day = request.args.get('day')
-    patient = Patient.query.filter_by(patientID=2).first()
-
-    schedule = patient.get_days_schedule()
-
-    # Return a JSON response (you can customize this as needed)
+    patient = Patient.query.filter_by(patientID=patient_id).first()
+    schedule = patient.get_days_schedule(day, month)
     return jsonify({'status': 'success', 'message': schedule})
 
 
@@ -126,7 +128,7 @@ def viewCalendar(patient_id):
         flash("You cannot access this patients data")
         return redirect(url_for('main.home'))
     monthlySched = patient.get_monthly_schedule()
-    return render_template("calendar.html", user=current_user.get_info(),
+    return render_template("calendar.html", user=current_user.get_info(), patient_id=patient_id,
                            cal=monthlySched["cal"],
                            year=monthlySched["current_year"],
                            month=monthlySched["month_name"],

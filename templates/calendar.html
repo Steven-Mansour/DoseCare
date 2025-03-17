@@ -55,10 +55,10 @@
         </table>
     </div>
     <div id="popupModal"
-        class="absolute inset-0 flex z-100 items-center justify-center bg-gray-900 bg-opacity-50 hidden">
-        <div class="bg-white md:ml-64 rounded-lg p-6 w-3/4 md:w-2/5">
+        class="absolute inset-0 flex z-100 items-center justify-center bg-gray-900 dark:bg-gray-200 dark:bg-opacity-50 bg-opacity-50 hidden">
+        <div class="bg-white dark:bg-gray-800 md:ml-64 rounded-lg p-6 w-3/4 md:w-2/5">
             <div class="flex justify-between items-center mb-4">
-                <h2 class="text-xl font-semibold" id="modalTitle"></h2>
+                <h2 class="text-xl font-semibold dark:text-gray-200" id="modalTitle"></h2>
                 <button onclick="closeModal()" class="text-gray-700 text-2xl leading-none">&times;</button>
             </div>
             <div id="modalContent" class="space-y-2">
@@ -67,7 +67,6 @@
         </div>
     </div>
 </div>
-
 <script>
     function openModal(day, month, anchor, event) {
         event.preventDefault();
@@ -76,17 +75,17 @@
         document.getElementById('popupModal').classList.remove('hidden');
 
         // Fetch data from the server and build HTML content
-        fetch('/popup-opened?day=' + encodeURIComponent(day))
+        fetch('/popup-opened/' + encodeURIComponent('{{patient_id}}') + '?month=' + encodeURIComponent(month) + '&day=' + encodeURIComponent(day))
             .then(response => response.json())
             .then(data => {
                 let contentHtml = '';
                 data.message.forEach(item => {
                     contentHtml += `
-                <div class="${item.status === 'done' ? 'opacity-50' : 'opacity-100'} pill-item grid grid-cols-4 items-center border-b border-gray-200 py-2">
+                <div class="${item.status.toLowerCase() === 'done' ? 'opacity-30' : 'opacity-100'} pill-item grid grid-cols-4 items-center border-b border-gray-200 dark:text-gray-200 py-2">
                     <div class="pill-name font-semibold text-left">${item.name}</div>
                     <div class="pill-dose text-center">Dose: ${item.dose}</div>
                     <div class="pill-time text-center">${item.time}</div>
-                    <div class="pill-status text-right ${item.status === 'done' ? 'text-green-500' : 'text-red-500'}">${item.status}</div>
+                    <div class="pill-status text-right ${item.status.toLowerCase() === 'done' ? 'text-green-500' : 'text-red-500'}">${item.status}</div>
                 </div>
               `;
                 });
@@ -99,6 +98,4 @@
         document.getElementById('popupModal').classList.add('hidden');
     }
 </script>
-
-
 {%endblock%}

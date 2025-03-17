@@ -305,10 +305,19 @@ class Patient(db.Model):
 
         return -1  # Return -1 if no free container is found
 
-    def get_days_schedule(self):
+    def get_days_schedule(self, day, month):
         current = datetime.now()
-        current_date = current.date()
+        current_year = current.year
         current_time = current.time()
+        try:
+            print("Month " + month)
+            month_number = list(calendar.month_name).index(month.strip())
+
+            print(f"Month #  {month_number}")
+            selected_date = datetime(current_year, month_number, int(day))
+        except ValueError:
+            return []
+        current_date = selected_date.date()
         schedules = self.pill_schedules
         daily_pills = []
 
@@ -325,9 +334,9 @@ class Patient(db.Model):
             if days[days_difference % frequency] == 1:
                 for prop in schedule_properties:
                     if current_time > prop.time:
-                        status = "done"
+                        status = "Done"
                     else:
-                        status = "pending"
+                        status = "Pending"
                     pill_info = {
                         "time": prop.time.strftime("%H:%M"),
                         "status": status,
