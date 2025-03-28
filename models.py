@@ -289,6 +289,7 @@ class Patient(db.Model):
             qty.append({"container": schedule.containerNb,
                        "qty": schedule.remainingQty,
                         "pill": schedule.pill.name})
+        qty.sort(key=lambda x: x["container"])
         return qty
 
     def get_unused_container(self):
@@ -393,6 +394,14 @@ class PillSchedule(db.Model):
     pharmacy = db.relationship('Pharmacy', backref='pill_schedules', lazy=True)
     pill = db.relationship('Pill', backref='pill_schedules',
                            lazy=True)  # Relationship with Pill
+
+    def extendSchedule(self, addedDays, addedPills):
+        addedDays = int(addedDays) if isinstance(addedDays, str) else addedDays
+        addedPills = int(addedPills) if isinstance(
+            addedPills, str) else addedPills
+        self.endDate += timedelta(days=addedDays)
+        self.remainingQty += addedPills
+        db.session.commit()
 
 
 class Pill(db.Model):

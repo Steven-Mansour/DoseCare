@@ -33,6 +33,23 @@ def privacyPolicy():
     return render_template("privacy.html", user=current_user.get_info())
 
 
+@main.route('/extendSchedule', methods=["POST"])
+@login_required
+def extendSchedule():
+    scheduleID = request.form.get('scheduleID')
+    print(scheduleID)
+    schedule = PillSchedule.query.filter_by(scheduleID=scheduleID).first()
+    patientID = schedule.patientID
+    if (not isCarer(patientID)):
+        flash("You are not allowed to perform this action", "failure")
+    daysExtended = request.form.get('extendDaysInput')
+    pillsAdded = request.form.get('refillAmount')
+    schedule.extendSchedule(daysExtended, pillsAdded)
+    flash("Schedule has been updated successfully", "success")
+    return redirect(url_for('main.schedule', patient_id=patientID))
+    # return f"{scheduleID} has been updated into {daysExtended} days and {pillsAdded} pills"
+
+
 @main.route('/')
 def index():
     return redirect(url_for('main.home'))
