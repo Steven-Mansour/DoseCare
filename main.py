@@ -21,6 +21,18 @@ def popup_opened(patient_id):
     return jsonify({'status': 'success', 'message': schedule})
 
 
+@main.route('/about')
+@login_required
+def about():
+    return render_template("about.html", user=current_user.get_info())
+
+
+@main.route('/privacyPolicy')
+@login_required
+def privacyPolicy():
+    return render_template("privacy.html", user=current_user.get_info())
+
+
 @main.route('/')
 def index():
     return redirect(url_for('main.home'))
