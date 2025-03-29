@@ -352,6 +352,23 @@ class Patient(db.Model):
 
         return sorted(daily_pills, key=lambda prop: prop['time'])
 
+    def confirm_dose(self, propIds):
+        for id in propIds:
+            prop = ScheduleProperty.query.filter_by(propertyID=id).first()
+            schedule = prop.schedule
+            schedule.remainingQty -= prop.dose
+        db.session.commit()
+
+    def miss_dose(self, propIds):
+        message = f"{self.firstName} has missed:"
+        for id in propIds:
+            prop = ScheduleProperty.query.filter_by(propertyID=id).first()
+            schedule = prop.schedule
+            pill = schedule.pill.name
+            message += f"\n- {prop.dose} {pill} pill{'s' if prop.dose!=1 else ''}."
+        self.confirm_dose(propIds)
+        return message
+
 
 class Pharmacy(Carer):
     pharmacyID = db.Column(db.Integer, primary_key=True, autoincrement=True)

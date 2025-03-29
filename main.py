@@ -61,7 +61,8 @@ def hey():
     # caregiver = Caregiver.query.filter_by(caregiverID=13).first()
     # caregiver.get_lowest_pills_schedule()
     # return "hey"
-    return patient.get_days_schedule()
+    message = patient.miss_dose([24, 25, 26])
+    return message
 
 
 @main.route('/home')
