@@ -4,6 +4,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import UserMixin
 from sqlalchemy import JSON
 from datetime import datetime, date, time, timedelta
+from messages import send_email
 import calendar
 import json
 
@@ -356,16 +357,23 @@ class Patient(db.Model):
         for id in propIds:
             prop = ScheduleProperty.query.filter_by(propertyID=id).first()
             schedule = prop.schedule
-            schedule.remainingQty -= prop.dose
+            if schedule.remainingQty >= prop.dose:
+                schedule.remainingQty -= prop.dose
+            else:
+                print("An error happened")
         db.session.commit()
 
-    def miss_dose(self, propIds):
+    async def miss_dose(self, propIds):
         message = f"{self.firstName} has missed:"
         for id in propIds:
             prop = ScheduleProperty.query.filter_by(propertyID=id).first()
             schedule = prop.schedule
             pill = schedule.pill.name
             message += f"\n- {prop.dose} {pill} pill{'s' if prop.dose!=1 else ''}."
+        if self.caregiver:
+            caregiverEmail = self.caregiver.user.email
+            recipients_list = [caregiverEmail]
+            await send_email(f"Missed Dose: {self.firstName} {self.lastName}", message, recipients_list)
         self.confirm_dose(propIds)
         return message
 
