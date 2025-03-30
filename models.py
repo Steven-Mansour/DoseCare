@@ -373,7 +373,7 @@ class Patient(db.Model):
         if self.caregiver:
             caregiverEmail = self.caregiver.user.email
             recipients_list = [caregiverEmail]
-            await send_email(f"Missed Dose: {self.firstName} {self.lastName}", message, recipients_list)
+            #await send_email(f"Missed Dose: {self.firstName} {self.lastName}", message, recipients_list)
         self.confirm_dose(propIds)
         return message
 
