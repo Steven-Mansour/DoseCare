@@ -4,7 +4,7 @@ from infrastructure import db
 from flask_login import login_required, current_user
 from datetime import datetime, timedelta
 from messages import sendMessage, send_email
-from rpi import send_json_to_pi
+from rpi import send_json_to_pi, clients
 
 main = Blueprint('main', __name__)
 
@@ -32,6 +32,44 @@ def about():
 @login_required
 def privacyPolicy():
     return render_template("privacy.html", user=current_user.get_info())
+
+
+@main.route('/dispenser')
+@login_required
+def dispenser():
+    if current_user.get_info()['role'] == 'patient':
+        patient = current_user.get_info()['patientID']
+        patient = Patient.query.filter_by(patientID=patient).first()
+        color = "red"
+        if patient.raspberryPiId in clients:
+            color = "green"
+        list1 = []
+        list1.append({
+            "patientID": patient.patientID,
+            "firstName": patient.firstName,
+            "lastName": patient.lastName,
+            "raspberryPiId": patient.raspberryPiId,
+            "color": color
+        })
+        return render_template('dispenser.html', list=list1, user=current_user.get_info())
+    carer = current_user.caregivers[0] if current_user.caregivers else current_user.pharmacies[0]
+    patients = carer.get_patients()
+    patient_list = []  # Use a list, not a dictionary
+
+    for patient in patients:
+        color = "red"
+        if patient.raspberryPiId in clients:
+            color = "green"
+
+        patient_list.append({
+            "patientID": patient.patientID,
+            "firstName": patient.firstName,
+            "lastName": patient.lastName,
+            "raspberryPiId": patient.raspberryPiId,
+            "color": color
+        })
+
+    return render_template('dispenser.html', list=patient_list, user=current_user.get_info())
 
 
 @main.route('/extendSchedule', methods=["POST"])
@@ -563,8 +601,9 @@ def search_pharmacy():
 
 def isCarer(patient_id):
     patient = Patient.query.filter_by(patientID=patient_id).first()
-    if patient.selfCarer == 1 and current_user.patients[0].patientID == patient_id:
-        return True
+    if patient.selfCarer == 1:
+        if current_user.patients and current_user.patients[0].patientID == patient_id:
+            return True
     carer = current_user.caregivers[0] if current_user.caregivers else current_user.pharmacies[0]
     if ((current_user.caregivers and patient.caregiverID == carer.caregiverID) or
             (current_user.pharmacies and carer.pharmacyID in [pharmacy.pharmacyID for pharmacy in patient.pharmacies])):
