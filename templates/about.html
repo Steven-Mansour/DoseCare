@@ -1,0 +1,62 @@
+{%extends "homeTemplate.html"%}
+{% block title %}About Us{% endblock %}
+{%block pageContent%}
+<div class="container mx-auto px-6 py-12">
+    <h1 class="text-4xl font-extrabold text-center text-gray-900 dark:text-gray-200 mb-8">
+        About Us
+    </h1>
+
+    <div class="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-xl transition-all duration-300 hover:shadow-2xl">
+        <p class="text-gray-700 dark:text-gray-300 text-lg leading-relaxed">
+            Welcome to <span class="font-semibold text-blue-600 dark:text-blue-400">DoseCare</span>, a smart and
+            user-friendly solution designed to help individuals
+            manage their medications effectively.
+        </p>
+
+        <h2 class="text-3xl font-bold text-gray-900 dark:text-gray-200 mt-8">Our Mission</h2>
+        <p class="text-gray-700 dark:text-gray-300 leading-relaxed">
+            We aim to simplify medication adherence by providing a seamless connection between users and their
+            pill dispensers. Our system ensures timely reminders, tracks medication intake, and offers real-time
+            updates to caregivers.
+        </p>
+
+        <h2 class="text-3xl font-bold text-gray-900 dark:text-gray-200 mt-8">How It Works</h2>
+        <p class="text-gray-700 dark:text-gray-300 leading-relaxed">
+            The application syncs with your smart pill dispenser, allowing you to set schedules, receive alerts, and
+            monitor your medication usage. Whether you're managing prescriptions for yourself or a loved one, our
+            platform makes it easy and reliable.
+        </p>
+
+        <h2 class="text-3xl font-bold text-gray-900 dark:text-gray-200 mt-8">Why Choose Us?</h2>
+        <ul class="list-disc pl-8 text-gray-700 dark:text-gray-300 space-y-2">
+            <li>✨ <span class="font-semibold">Automated pill dispensing</span> with smart notifications</li>
+            <li>🔒 Secure and user-friendly interface</li>
+            <li>📡 Remote access for caregivers and family members</li>
+            <li>⏰ Customizable reminders tailored to your needs</li>
+        </ul>
+
+        <!-- Team Image Section -->
+        <div class="flex flex-col items-center mt-10">
+            <img src="{{ url_for('static', filename='images/fyp-photo.jpeg') }}" alt="Team behind the Pill Dispenser"
+                class="w-3/4 lg:w-1/2 rounded-xl shadow-lg border border-gray-300 dark:border-gray-700 transition-transform duration-300 transform hover:scale-105">
+            <p class="text-gray-700 dark:text-gray-300 mt-4 text-center leading-relaxed">
+                Meet the team behind <span class="font-semibold text-blue-600 dark:text-blue-400">DoseCare</span>! Our
+                dedicated group of
+                engineers who worked tirelessly to create a product that improves
+                medication management and enhances patient care. We are passionate about making a real difference in
+                people's lives by providing a reliable and smart solution for medication adherence.
+            </p>
+        </div>
+
+        <h2 class="text-3xl font-bold text-gray-900 dark:text-gray-200 mt-10">Contact Us</h2>
+        <p class="text-gray-700 dark:text-gray-300 leading-relaxed">
+            Have questions? Reach out to our support team at
+            <a href="mailto:support@dosecare.com"
+                class="text-blue-600 dark:text-blue-400 font-semibold hover:underline">
+                support@DoseCare.com
+            </a>.
+        </p>
+    </div>
+</div>
+
+{%endblock%}

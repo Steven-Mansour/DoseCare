@@ -2,12 +2,120 @@
 {% block title %}Profile{% endblock %}
 {%block pageContent%}
 
-<div class="flex flex-col h-screen items-center pt-20 h-48 mb-4 rounded-sm bg-gray-50 dark:bg-gray-800">
-    <div>{{user.email|capitalize}}</div>
-    <div> {{user.name|capitalize}}</div>
-    <div>{{user.role|capitalize}}</div>
+
+<div class="min-h-screen flex flex-col items-center justify-center p-4">
+    <div>
+        <h1 class="text-3xl mb-10 font-bold text-indigo-800 dark:text-white mb-2">Your Profile</h1>
+    </div>
+    <div
+        class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-4xl w-full p-8 transition-all duration-300 animate-fade-in">
+
+        <div class="flex flex-col md:flex-row">
+            <div class="md:w-1/3 text-center mb-8 md:mb-0">
+                <img src="https://i.pravatar.cc/300" alt="Profile Picture"
+                    class="rounded-full w-48 h-48 mx-auto mb-4 border-4 border-indigo-800 dark:border-blue-900 transition-transform duration-300 hover:scale-105">
+                <div class="flex flex-row gap-x-2 justify-center">
+                    <p class="text-2xl font-bold text-indigo-800 dark:text-white mb-2" id="nameText">
+                        {{user.name|capitalize}}</p>
+                    <input id="name"
+                        class="mb-6 block hidden py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none dark:text-white dark:border-gray-600 dark:focus:border-blue-500 focus:outline-none focus:ring-0 focus:border-blue-600 peer"
+                        type="text" value="{{ user.name }}">
+                    <p class="text-2xl font-bold text-indigo-800 dark:text-white mb-2" id="lastNameText">
+                        {{user.lastName|capitalize if user.lastName}}</p>
+                    <input id="lastName"
+                        class="mb-6 block hidden py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none dark:text-white dark:border-gray-600 dark:focus:border-blue-500 focus:outline-none focus:ring-0 focus:border-blue-600 peer"
+                        type="text" value="{{ user.lastName }}">
+                </div>
 
 
+                <p class="text-gray-600 dark:text-gray-300">{{user.role|capitalize}}</p>
+                <button id="editButton" onclick="enableEditing()"
+                    class="mt-4 bg-indigo-800 text-white px-4 py-2 rounded-lg hover:bg-blue-900 transition-colors duration-300">Edit
+                    Profile</button>
+            </div>
+            <div class="md:w-2/3 md:pl-8">
+                <h2 class="text-xl font-semibold text-indigo-800 dark:text-white mb-4">Your Role</h2>
+
+                <p class="text-gray-700 dark:text-gray-300 mb-6">
+                    {%if user.role == "patient"%}
+                    As a patient, you can either manage your schedules or have a caregiver/pharmacy manage them on your
+                    behalf. <br> <br>
+                    <b>Also don't forget to take your meds!</b>
+                    {%elif user.role == "caregiver"%}
+                    As a caregiver, you are required to login daily to check on your patients and manage their
+                    schedules. <br>
+                    You are also expected to keep your phone nearby to receive any notification.
+                    {%elif user.role == "pharmacist"%}
+                    As a pharmacist, you can add pills to the system when needed. <br>
+                    You might also manage schedules for patients that choose you as their pharmacy.
+                    {%endif%}
+                </p>
+                <!-- <h2 class="text-xl font-semibold text-indigo-800 dark:text-white mb-4">Skills</h2>
+                <div class="flex flex-wrap gap-2 mb-6">
+                    <span class="bg-indigo-100 text-indigo-800 px-3 py-1 rounded-full text-sm">JavaScript</span>
+                    <span class="bg-indigo-100 text-indigo-800 px-3 py-1 rounded-full text-sm">React</span>
+                    <span class="bg-indigo-100 text-indigo-800 px-3 py-1 rounded-full text-sm">Node.js</span>
+                    <span class="bg-indigo-100 text-indigo-800 px-3 py-1 rounded-full text-sm">Python</span>
+                    <span class="bg-indigo-100 text-indigo-800 px-3 py-1 rounded-full text-sm">SQL</span>
+                </div> -->
+                <h2 class="text-xl font-semibold text-indigo-800 dark:text-white mb-4">Contact Information</h2>
+                <ul class="space-y-2 text-gray-700 dark:text-gray-300">
+                    <li class="flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-indigo-800 dark:text-blue-900"
+                            viewBox="0 0 20 20" fill="currentColor">
+                            <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
+                            <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
+                        </svg>
+                        <p id="emailText">
+                            {{user.email|capitalize}}</p>
+                        <input id="email"
+                            class="ml-2 mb-2 block hidden py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none dark:text-white dark:border-gray-600 dark:focus:border-blue-500 focus:outline-none focus:ring-0 focus:border-blue-600 peer"
+                            type="text" value="{{ user.email }}">
+                    </li>
+                    <li class="flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-indigo-800 dark:text-blue-900"
+                            viewBox="0 0 20 20" fill="currentColor">
+                            <path
+                                d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z" />
+                        </svg>
+                        <p id="phoneText">
+                            +961 {{user.phone}}</p>
+                        <input id="phone"
+                            class="ml-2 mb-2 block hidden py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none dark:text-white dark:border-gray-600 dark:focus:border-blue-500 focus:outline-none focus:ring-0 focus:border-blue-600 peer"
+                            type="text" value="{{ user.phone }}">
+                    </li>
+                    {%if user.location%}
+                    <li class="flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-indigo-800 dark:text-blue-900"
+                            viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd"
+                                d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z"
+                                clip-rule="evenodd" />
+                        </svg>
+                        {{user.location}}
+                    </li>
+                    {%endif%}
+                </ul>
+            </div>
+        </div>
+    </div>
 </div>
+<script>
+    function enableEditing() {
+
+        document.getElementById("nameText").classList.add("hidden");
+        document.getElementById("lastNameText").classList.add("hidden");
+        document.getElementById("emailText").classList.add("hidden");
+        document.getElementById("phoneText").classList.add("hidden");
+        document.getElementById("name").classList.remove("hidden");
+        document.getElementById("lastName").classList.remove("hidden");
+        document.getElementById("email").classList.remove("hidden");
+        document.getElementById("phone").classList.remove("hidden");
+
+        document.getElementById("editButton").classList.add("hidden");
+        document.getElementById("saveButton").classList.remove("hidden");
+        document.getElementById("cancelButton").classList.remove("hidden");
+    }
+</script>
 
 {%endblock%}

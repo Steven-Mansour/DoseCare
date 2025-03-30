@@ -1,11 +1,13 @@
-from app import db
+from infrastructure import db
 from flask import jsonify
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import UserMixin
 from sqlalchemy import JSON
 from datetime import datetime, date, time, timedelta
+from messages import send_email
 import calendar
 import json
+import threading
 
 
 class Carer(db.Model):
@@ -54,11 +56,14 @@ class User(db.Model, UserMixin):
     def get_info(self):
         """Check if the user is a patient, caregiver, or pharmacist and return a dictionary."""
         if self.patients:  # Checks if the user has an associated patient record
-            return {"role": "patient", "name": self.patients[0].firstName, "patientID": self.patients[0].patientID, "email": self.email, }
+            return {"role": "patient", "name": self.patients[0].firstName, "lastName": self.patients[0].lastName,  "patientID": self.patients[0].patientID,
+                    "email": self.email, "phone": self.patients[0].emergencyContactNb, "userID": self.userID, "selfCarer": self.patients[0].selfCarer}
         elif self.caregivers:  # Checks if the user has an associated caregiver record
-            return {"role": "caregiver", "name": self.caregivers[0].firstName, "caregiverID": self.caregivers[0].caregiverID, "email": self.email, }
+            return {"role": "caregiver", "name": self.caregivers[0].firstName, "lastName": self.caregivers[0].lastName, "caregiverID": self.caregivers[0].caregiverID,
+                    "email": self.email, "phone": self.caregivers[0].phoneNb, "userID": self.userID}
         elif self.pharmacies:  # Checks if the user has an associated pharmacy record
-            return {"role": "pharmacist", "name": self.pharmacies[0].name, "pharmacyID": self.pharmacies[0].pharmacyID, "email": self.email, }
+            return {"role": "pharmacist", "name": self.pharmacies[0].name, "pharmacyID": self.pharmacies[0].pharmacyID,
+                    "email": self.email, "phone": self.pharmacies[0].phoneNb, "location": self.pharmacies[0].location, "userID": self.userID}
         # If the user doesn't belong to any category
         return {"role": "unknown", "name": "N/A"}
 
@@ -66,15 +71,17 @@ class User(db.Model, UserMixin):
         """Check if the user is a patient, caregiver, or pharmacist and return a dictionary."""
         if self.patients:  # Checks if the user has an associated patient record
             return {"role": "patient", "name": self.patients[0].firstName, "patientID": self.patients[0].patientID, "email": self.email,  "patient": self.patients[0],
-                    "caregiver": self.patients[0].caregiver, "nextDose": self.patients[0].get_next_dose(), "remQty": self.patients[0].get_qty_per_container()}
+                    "caregiver": self.patients[0].caregiver, "nextDose": self.patients[0].get_next_dose(), "remQty": self.patients[0].get_qty_per_container(), "userID": self.userID,
+                    "selfCarer": self.patients[0].selfCarer}
         elif self.caregivers:  # Checks if the user has an associated caregiver record
             return {"role": "caregiver", "name": self.caregivers[0].firstName, "caregiverID": self.caregivers[0].caregiverID, "email": self.email,
                     "caregiver": self.caregivers[0], "nbOfPatients": self.caregivers[0].get_nb_of_patients(),
-                    "patientsEndingSchedules": self.caregivers[0].get_patients_ending_schedule(), "lowPillsSchedules": self.caregivers[0].get_lowest_pills_schedule()}
+                    "patientsEndingSchedules": self.caregivers[0].get_patients_ending_schedule(), "lowPillsSchedules": self.caregivers[0].get_lowest_pills_schedule(), "userID": self.userID}
         elif self.pharmacies:  # Checks if the user has an associated pharmacy record
             return {"role": "pharmacist", "name": self.pharmacies[0].name, "pharmacyID": self.pharmacies[0].pharmacyID, "email": self.email, "pharmacy": self.pharmacies[0],
                     "nbOfPatients": self.pharmacies[0].get_nb_of_patients(),
-                    "patientsEndingSchedules": self.pharmacies[0].get_patients_ending_schedule(), "lowPillsSchedules": self.pharmacies[0].get_lowest_pills_schedule()}
+                    "patientsEndingSchedules": self.pharmacies[0].get_patients_ending_schedule(), "lowPillsSchedules": self.pharmacies[0].get_lowest_pills_schedule(), "userID": self.userID
+                    }
         # If the user doesn't belong to any category
         return {"role": "unknown", "name": "N/A"}
 
@@ -90,18 +97,6 @@ class Caregiver(Carer):
     # Define relationship with User
     user = db.relationship('User', backref='caregivers', lazy=True)
 
-    # def get_nb_of_patients(self):
-    #     return len(self.patients)
-
-    # def get_patients_ending_schedule(self, n=3):
-    #     patient_end_times = []
-
-    #     for patient in self.patients:
-    #         patient.get_ending_schedules(patient_end_times)
-    #     patient_end_times.sort(key=lambda x: (x[2] >= 0, x[2]))
-    #     n_patients = patient_end_times[:n]
-    #     return n_patients
-
 
 patient_pharmacy = db.Table(
     'patient_pharmacy',
@@ -116,6 +111,8 @@ class Patient(db.Model):
     patientID = db.Column(db.Integer, primary_key=True, autoincrement=True)
     firstName = db.Column(db.String(100), nullable=False)
     lastName = db.Column(db.String(100), nullable=False)
+    selfCarer = db.Column(db.Boolean, nullable=False, default=False)
+    raspberryPiId = db.Column(db.String(255), unique=True, nullable=True)
     emergencyContactNb = db.Column(db.String(15), nullable=False)
     caregiverID = db.Column(db.Integer, db.ForeignKey(
         'caregiver.caregiverID'), nullable=True)  # Foreign Key from CAREGIVER
@@ -283,6 +280,7 @@ class Patient(db.Model):
             qty.append({"container": schedule.containerNb,
                        "qty": schedule.remainingQty,
                         "pill": schedule.pill.name})
+        qty.sort(key=lambda x: x["container"])
         return qty
 
     def get_unused_container(self):
@@ -298,6 +296,90 @@ class Patient(db.Model):
                 return i+1
 
         return -1  # Return -1 if no free container is found
+
+    def get_days_schedule(self, day, month):
+        current = datetime.now()
+        current_year = current.year
+        current_time = current.time()
+        try:
+            print("Month " + month)
+            month_number = list(calendar.month_name).index(month.strip())
+
+            print(f"Month #  {month_number}")
+            selected_date = datetime(current_year, month_number, int(day))
+        except ValueError:
+            return []
+        current_date = selected_date.date()
+        schedules = self.pill_schedules
+        daily_pills = []
+
+        for schedule in schedules:
+            start_date = schedule.startDate
+            end_date = schedule.endDate
+            frequency = schedule.frequency
+            days = schedule.day
+            if current_date < start_date or current_date > end_date:
+                continue
+            schedule_properties = schedule.schedule_properties
+            date_difference = current_date - start_date
+            days_difference = date_difference.days
+            if days[days_difference % frequency] == 1:
+                for prop in schedule_properties:
+                    if (current_date - current.date()).days < 0:
+                        status = "Done"
+                    elif (current_date - current.date()).days > 0:
+                        status = "Pending"
+                    elif current_time > prop.time:
+                        status = "Done"
+                    else:
+                        status = "Pending"
+                    pill_info = {
+                        "time": prop.time.strftime("%H:%M"),
+                        "status": status,
+                        "dose": prop.dose,
+                        "name": schedule.pill.name
+                    }
+                    daily_pills.append(pill_info)
+
+        return sorted(daily_pills, key=lambda prop: prop['time'])
+
+    def confirm_dose(self, propIds):
+        for id in propIds:
+            prop = ScheduleProperty.query.filter_by(propertyID=id).first()
+            schedule = prop.schedule
+            if schedule.remainingQty >= prop.dose:
+                schedule.remainingQty -= prop.dose
+            else:
+                print("An error happened")
+        db.session.commit()
+
+    def miss_dose(self, propIds):
+        message = f"{self.firstName} has missed:"
+        for id in propIds:
+            prop = ScheduleProperty.query.filter_by(propertyID=id).first()
+            schedule = prop.schedule
+            pill = schedule.pill.name
+            message += f"\n- {prop.dose} {pill} pill{'s' if prop.dose!=1 else ''}."
+        if self.caregiver:
+            caregiverEmail = self.caregiver.user.email
+            recipients_list = [caregiverEmail]
+            # threading.Thread(
+            #     target=send_email,
+            #     args=(
+            #         f"Missed Dose: {self.firstName} {self.lastName}", message, recipients_list)
+            # ).start()
+        self.confirm_dose(propIds)
+        return message
+
+    def empty_container(self, propIds):
+        caregiverEmail = self.caregiver.user.email
+        recipients_list = [caregiverEmail]
+        message = f"You need to refill the container ASAP."
+        # threading.Thread(
+        #     target=send_email,
+        #     args=(
+        #         f"Empty Container: {self.firstName} {self.lastName}", message, recipients_list)
+        # ).start()
 
 
 class Pharmacy(Carer):
@@ -341,6 +423,14 @@ class PillSchedule(db.Model):
     pharmacy = db.relationship('Pharmacy', backref='pill_schedules', lazy=True)
     pill = db.relationship('Pill', backref='pill_schedules',
                            lazy=True)  # Relationship with Pill
+
+    def extendSchedule(self, addedDays, addedPills):
+        addedDays = int(addedDays) if isinstance(addedDays, str) else addedDays
+        addedPills = int(addedPills) if isinstance(
+            addedPills, str) else addedPills
+        self.endDate += timedelta(days=addedDays)
+        self.remainingQty += addedPills
+        db.session.commit()
 
 
 class Pill(db.Model):

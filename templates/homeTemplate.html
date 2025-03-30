@@ -16,9 +16,9 @@
 </button>
 
 <aside id="default-sidebar"
-    class="absolute top-18 overflow-y-hidden left-0 z-10 w-64 h-screen sm:h-auto transition-transform -translate-x-full sm:translate-x-0"
+    class="absolute top-20 overflow-y-hidden  left-0  w-64 h-screen sm:h-auto transition-transform -translate-x-full sm:translate-x-0"
     aria-label="Sidebar">
-    <div class="h-full px-3 py-4 overflow-y-auto bg-gray-50 dark:bg-gray-900">
+    <div class="h-full px-3 py-4 overflow-y-auto  bg-gray-50 dark:bg-gray-900">
         <ul class="space-y-2 font-medium">
 
             <li>
@@ -47,6 +47,28 @@
                     <span class="ms-3">Dashboard</span>
                 </a>
             </li>
+            {%if user.selfCarer == 1%}
+            <li>
+                <a href="{{ url_for('main.schedule', patient_id = user.patientID) }}"
+                    class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+                    <svg class="shrink-0 w-6 h-6 text-gray-500 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-gray-900"
+                        aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 64 72">
+                        <g transform="translate(-5,0)">
+                            <circle cx="32" cy="32" r="30" fill="currentColor" />
+                            <path d="M32 12a2 2 0 0 0-2 2v18h-8a2 2 0 0 0 0 4h10a2 2 0 0 0 2-2V12a2 2 0 0 0-2-2z"
+                                fill="white" />
+                        </g>
+                        <g transform="translate(30,40) scale(2)">
+                            <path d="M8 0L16 14H0L8 0z" fill="white" stroke="currentColor" stroke-width="2"
+                                stroke-linejoin="round" />
+                            <rect x="7" y="4" width="2" height="6" fill="currentColor" />
+                            <circle cx="8" cy="12" r="1.5" fill="currentColor" />
+                        </g>
+                    </svg>
+                    <span class="ms-3">View Schedule</span>
+                </a>
+            </li>
+            {%endif%}
             {% if user.role in "pharmacist caregiver" %}
             <li>
                 <a href="{{ url_for('main.viewPatients') }}"
