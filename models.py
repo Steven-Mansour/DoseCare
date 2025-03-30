@@ -1,4 +1,4 @@
-from app import db
+from infrastructure import db
 from flask import jsonify
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import UserMixin
@@ -123,6 +123,7 @@ class Patient(db.Model):
     firstName = db.Column(db.String(100), nullable=False)
     lastName = db.Column(db.String(100), nullable=False)
     selfCarer = db.Column(db.Boolean, nullable=False, default=False)
+    raspberryPiId = db.Column(db.String(255), unique=True, nullable=True)
     emergencyContactNb = db.Column(db.String(15), nullable=False)
     caregiverID = db.Column(db.Integer, db.ForeignKey(
         'caregiver.caregiverID'), nullable=True)  # Foreign Key from CAREGIVER
@@ -373,7 +374,7 @@ class Patient(db.Model):
         if self.caregiver:
             caregiverEmail = self.caregiver.user.email
             recipients_list = [caregiverEmail]
-            #await send_email(f"Missed Dose: {self.firstName} {self.lastName}", message, recipients_list)
+            # await send_email(f"Missed Dose: {self.firstName} {self.lastName}", message, recipients_list)
         self.confirm_dose(propIds)
         return message
 

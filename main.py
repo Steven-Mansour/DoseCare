@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, redirect, url_for, request, flash, jsonify, session
 from models import User, Pill, Caregiver, Patient, PillSchedule, ScheduleProperty, Pharmacy, patient_pharmacy
-from app import db
+from infrastructure import db
 from flask_login import login_required, current_user
 from datetime import datetime, timedelta
 from messages import sendMessage, send_email
@@ -46,6 +46,10 @@ def extendSchedule():
     daysExtended = request.form.get('extendDaysInput')
     pillsAdded = request.form.get('refillAmount')
     schedule.extendSchedule(daysExtended, pillsAdded)
+    patient = schedule.patient
+    pi_id = patient.raspberryPiId
+    if pi_id:
+        send_json_to_pi(pi_id)
     flash("Schedule has been updated successfully", "success")
     return redirect(url_for('main.schedule', patient_id=patientID))
     # return f"{scheduleID} has been updated into {daysExtended} days and {pillsAdded} pills"
@@ -188,7 +192,9 @@ def deleteSchedule(schedule_id):
         flash("Schedule deleted successfully", "success")
     else:
         flash("Schedule not found", "error")
-
+    pi_id = patient.raspberryPiId
+    if pi_id:
+        send_json_to_pi(pi_id)
     return redirect(url_for('main.schedule', patient_id=patient.patientID))
 
 
@@ -322,6 +328,9 @@ def createSchedule_post(patient_id):
                 time=time, dose=dose, scheduleID=schedule.scheduleID)
             db.session.add(new_schedule_property)
         db.session.commit()
+    pi_id = patient.raspberryPiId
+    if pi_id:
+        send_json_to_pi(pi_id)
     flash(
         f"""Schedule has been created successfully: \n Make sure to use the disk named
         '{schedule.pill.shape[0].capitalize()}{schedule.pill.size}' in container {schedule.containerNb}""", "success")
@@ -382,6 +391,9 @@ def editSchedule_post(schedule_id):
                 time=time, dose=dose, scheduleID=schedule.scheduleID)
             db.session.add(new_schedule_property)
         db.session.commit()
+    pi_id = patient.raspberryPiId
+    if pi_id:
+        send_json_to_pi(pi_id)
     flash('The schedule has been updated successfully', "success")
     return redirect(url_for('main.schedule', patient_id=patient.patientID))
 

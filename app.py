@@ -1,12 +1,11 @@
 from flask import Flask
-from flask_sqlalchemy import SQLAlchemy
+from infrastructure import db, socketio
 from dotenv import load_dotenv
 from flask_login import LoginManager
 from flask_migrate import Migrate
-from rpi import rpi, socketio
 import os
 
-db = SQLAlchemy()
+
 load_dotenv()
 
 
@@ -40,5 +39,5 @@ def create_app():
     from rpi import rpi as rpi_blueprint
     app.register_blueprint(rpi_blueprint, url_prefix='/rpi')
     if __name__ == '__main__':
-        socketio.run(app, debug=True, host="0.0.0.0", port=5001)
+        socketio.run(app, debug=True, host="0.0.0.0", port=5000)
     return app
