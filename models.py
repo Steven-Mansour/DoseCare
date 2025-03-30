@@ -41,6 +41,15 @@ class User(db.Model, UserMixin):
                       nullable=False)
     password_hash = db.Column(db.String(256), nullable=False)
 
+    notifications = db.relationship(
+        'Notification', back_populates='user', cascade="all, delete-orphan")
+
+    def get_unread_notifications(self):
+        # Execute query to get all unread notifications
+        notif = Notification.query.filter_by(
+            userID=self.userID, isRead=False).all()
+        return len(notif)  # Return the count of unread notifications
+
     def set_password(self, password):
         """Hash and store the password"""
         self.password_hash = generate_password_hash(password)
@@ -56,34 +65,99 @@ class User(db.Model, UserMixin):
     def get_info(self):
         """Check if the user is a patient, caregiver, or pharmacist and return a dictionary."""
         if self.patients:  # Checks if the user has an associated patient record
-            return {"role": "patient", "name": self.patients[0].firstName, "lastName": self.patients[0].lastName,  "patientID": self.patients[0].patientID,
-                    "email": self.email, "phone": self.patients[0].emergencyContactNb, "userID": self.userID, "selfCarer": self.patients[0].selfCarer}
+            return {
+                "role": "patient", ""
+                "name": self.patients[0].firstName,
+                "lastName": self.patients[0].lastName,
+                "patientID": self.patients[0].patientID,
+                "email": self.email,
+                "phone": self.patients[0].emergencyContactNb,
+                "userID": self.userID,
+                "selfCarer": self.patients[0].selfCarer,
+                "notifications": self.get_unread_notifications()
+            }
+
         elif self.caregivers:  # Checks if the user has an associated caregiver record
-            return {"role": "caregiver", "name": self.caregivers[0].firstName, "lastName": self.caregivers[0].lastName, "caregiverID": self.caregivers[0].caregiverID,
-                    "email": self.email, "phone": self.caregivers[0].phoneNb, "userID": self.userID}
+            return {
+                "role": "caregiver",
+                "name": self.caregivers[0].firstName,
+                "lastName": self.caregivers[0].lastName,
+                "caregiverID": self.caregivers[0].caregiverID,
+                "email": self.email,
+                "phone": self.caregivers[0].phoneNb,
+                "userID": self.userID,
+                "notifications": self.get_unread_notifications()
+            }
+
         elif self.pharmacies:  # Checks if the user has an associated pharmacy record
-            return {"role": "pharmacist", "name": self.pharmacies[0].name, "pharmacyID": self.pharmacies[0].pharmacyID,
-                    "email": self.email, "phone": self.pharmacies[0].phoneNb, "location": self.pharmacies[0].location, "userID": self.userID}
+            return {
+                "role": "pharmacist",
+                "name": self.pharmacies[0].name,
+                "pharmacyID": self.pharmacies[0].pharmacyID,
+                "notifications": self.get_unread_notifications(),
+                "email": self.email,
+                "phone": self.pharmacies[0].phoneNb,
+                "location": self.pharmacies[0].location,
+                "userID": self.userID
+            }
         # If the user doesn't belong to any category
         return {"role": "unknown", "name": "N/A"}
 
     def get_stats(self):
         """Check if the user is a patient, caregiver, or pharmacist and return a dictionary."""
         if self.patients:  # Checks if the user has an associated patient record
-            return {"role": "patient", "name": self.patients[0].firstName, "patientID": self.patients[0].patientID, "email": self.email,  "patient": self.patients[0],
-                    "caregiver": self.patients[0].caregiver, "nextDose": self.patients[0].get_next_dose(), "remQty": self.patients[0].get_qty_per_container(), "userID": self.userID,
-                    "selfCarer": self.patients[0].selfCarer}
+            return {
+                "role": "patient",
+                "name": self.patients[0].firstName,
+                "patientID": self.patients[0].patientID,
+                "email": self.email,
+                "patient": self.patients[0],
+                "caregiver": self.patients[0].caregiver,
+                "nextDose": self.patients[0].get_next_dose(),
+                "remQty": self.patients[0].get_qty_per_container(),
+                "userID": self.userID,
+                "selfCarer": self.patients[0].selfCarer,
+                "notifications": self.get_unread_notifications()
+            }
         elif self.caregivers:  # Checks if the user has an associated caregiver record
-            return {"role": "caregiver", "name": self.caregivers[0].firstName, "caregiverID": self.caregivers[0].caregiverID, "email": self.email,
-                    "caregiver": self.caregivers[0], "nbOfPatients": self.caregivers[0].get_nb_of_patients(),
-                    "patientsEndingSchedules": self.caregivers[0].get_patients_ending_schedule(), "lowPillsSchedules": self.caregivers[0].get_lowest_pills_schedule(), "userID": self.userID}
+            return {
+                "role": "caregiver",
+                "name": self.caregivers[0].firstName,
+                "caregiverID": self.caregivers[0].caregiverID,
+                "email": self.email,
+                "caregiver": self.caregivers[0],
+                "nbOfPatients": self.caregivers[0].get_nb_of_patients(),
+                "notifications": self.get_unread_notifications(),
+                "patientsEndingSchedules": self.caregivers[0].get_patients_ending_schedule(),
+                "lowPillsSchedules": self.caregivers[0].get_lowest_pills_schedule(),
+                "userID": self.userID
+            }
         elif self.pharmacies:  # Checks if the user has an associated pharmacy record
-            return {"role": "pharmacist", "name": self.pharmacies[0].name, "pharmacyID": self.pharmacies[0].pharmacyID, "email": self.email, "pharmacy": self.pharmacies[0],
-                    "nbOfPatients": self.pharmacies[0].get_nb_of_patients(),
-                    "patientsEndingSchedules": self.pharmacies[0].get_patients_ending_schedule(), "lowPillsSchedules": self.pharmacies[0].get_lowest_pills_schedule(), "userID": self.userID
-                    }
+            return {
+                "role": "pharmacist",
+                "name": self.pharmacies[0].name,
+                "pharmacyID": self.pharmacies[0].pharmacyID,
+                "email": self.email,
+                "pharmacy": self.pharmacies[0],
+                "nbOfPatients": self.pharmacies[0].get_nb_of_patients(),
+                "notifications": self.get_unread_notifications(),
+                "patientsEndingSchedules": self.pharmacies[0].get_patients_ending_schedule(),
+                "lowPillsSchedules": self.pharmacies[0].get_lowest_pills_schedule(),
+                "userID": self.userID
+            }
         # If the user doesn't belong to any category
         return {"role": "unknown", "name": "N/A"}
+
+
+class Notification(db.Model):
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    userID = db.Column(db.Integer, db.ForeignKey(
+        'user.userID'), nullable=False)  # Associate with a user
+    message = db.Column(db.String(255), nullable=False)
+    timestamp = db.Column(db.DateTime, default=datetime.now)
+    isRead = db.Column(db.Boolean, default=False)  # Track read status
+
+    user = db.relationship('User', back_populates='notifications')
 
 
 class Caregiver(Carer):

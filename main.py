@@ -5,6 +5,7 @@ from flask_login import login_required, current_user
 from datetime import datetime, timedelta
 from messages import sendMessage, send_email
 from rpi import send_json_to_pi, clients
+from notifications import create_notification
 
 main = Blueprint('main', __name__)
 
@@ -114,17 +115,8 @@ def index():
 
 
 @main.route('/hey')
-async def hey():
-    # patient = Patient.query.filter_by(patientID=2).first()
-    # caregiver = Caregiver.query.filter_by(caregiverID=13).first()
-    # caregiver.get_lowest_pills_schedule()
-    # return "hey"
-    # message = await patient.miss_dose([24, 25, 26])
-    # recipients_list = ["stvnmnsr@gmail.com", "steven.mansour@lau.edu"]
-    # await send_email("Async Email Subject", "This is an async test email body.", recipients_list)
-    # return patient.send_schedule()
-    # return message
-    send_json_to_pi('raspberry_pi_1')
+def hey():
+    create_notification(5, "Hello")
     return "done"
 
 

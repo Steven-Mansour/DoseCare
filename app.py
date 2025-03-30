@@ -36,6 +36,9 @@ def create_app():
     from auth import auth as auth_blueprint
     app.register_blueprint(auth_blueprint, url_prefix='/auth')
 
+    from notifications import notification as notification_blueprint
+    app.register_blueprint(notification_blueprint, url_prefix='/notification')
+
     from rpi import rpi as rpi_blueprint
     app.register_blueprint(rpi_blueprint, url_prefix='/rpi')
     if __name__ == '__main__':
