@@ -40,7 +40,7 @@
                 <a href="{{ url_for('main.editSchedule', schedule_id=schedule.scheduleID) }}">{{schedule.pill.name}}</a>
             </div>
             <div class=" dark:text-gray-100 text-gray-600">{{ schedule.remainingQty}}</div>
-            <div class="dark:text-gray-100 text-gray-600">{{ schedule.endDate }}</div>
+            <div class="dark:text-gray-100 text-gray-600">{{ schedule.endDate.strftime('%d-%m-%Y') }}</div>
             <div class="dark:text-gray-100 text-gray-600">{{ schedule.pill.shape[0]|capitalize}}{{ schedule.pill.size}}
             </div>
             <div class="dark:text-gray-100 text-gray-600">{{ schedule.containerNb}}</div>
