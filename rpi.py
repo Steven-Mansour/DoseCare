@@ -1,5 +1,5 @@
 from flask import Flask, render_template, jsonify, request, Blueprint
-
+import asyncio
 from models import User, Pill, Caregiver, Patient, PillSchedule, ScheduleProperty
 from infrastructure import socketio
 rpi = Blueprint('rpi', __name__)
@@ -14,7 +14,6 @@ clients = {}
 @socketio.on('register_id')
 def register_id(data):
     pi_id = data['id']
-    print(pi_id)
     patient = Patient.query.filter_by(raspberryPiId=pi_id).first()
     if patient:
         clients[pi_id] = request.sid  # Store session ID for communication
@@ -38,18 +37,24 @@ def send_json_to_pi(pi_id):
 
 @socketio.on('notify_event')
 def handle_notification(data):
-    event = data.get("event")
-    dose_info = data.get("dose_info")
-
-    print(f"\n🔔 Notification received from Raspberry Pi:")
-    print(f"  Event: {event}")
-    print(f"  Dose Info: {dose_info}\n")
-
-# Route to trigger JSON sending via button
-
-
-@rpi.route('/send_json')
-def send_json():
-    # Send to specific Raspberry Pi
-    response = send_json_to_pi("raspberry_pi_1")
-    return jsonify(response)
+    pi_id = data.get("id")
+    if pi_id in clients:
+        print(pi_id)
+        event = data.get("event")
+        props = data.get("prop_id")
+        print(f"\n🔔 Notification received from Raspberry Pi:")
+        print(f"  Event: {event}")
+        print(f"  Prop Id: {props}\n")
+        patient = Patient.query.filter_by(raspberryPiId=pi_id).first()
+        if patient:
+            match event:
+                case "missed":
+                    patient.miss_dose(props)
+                case "released":
+                    patient.confirm_dose(props)
+                case "early_release":
+                    patient.confirm_dose(props)
+                case "empty":
+                    patient.empty_container(props)
+                case _:
+                    print("⚠️ Unknown event type received")

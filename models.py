@@ -7,6 +7,7 @@ from datetime import datetime, date, time, timedelta
 from messages import send_email
 import calendar
 import json
+import threading
 
 
 class Carer(db.Model):
@@ -95,18 +96,6 @@ class Caregiver(Carer):
 
     # Define relationship with User
     user = db.relationship('User', backref='caregivers', lazy=True)
-
-    # def get_nb_of_patients(self):
-    #     return len(self.patients)
-
-    # def get_patients_ending_schedule(self, n=3):
-    #     patient_end_times = []
-
-    #     for patient in self.patients:
-    #         patient.get_ending_schedules(patient_end_times)
-    #     patient_end_times.sort(key=lambda x: (x[2] >= 0, x[2]))
-    #     n_patients = patient_end_times[:n]
-    #     return n_patients
 
 
 patient_pharmacy = db.Table(
@@ -364,7 +353,7 @@ class Patient(db.Model):
                 print("An error happened")
         db.session.commit()
 
-    async def miss_dose(self, propIds):
+    def miss_dose(self, propIds):
         message = f"{self.firstName} has missed:"
         for id in propIds:
             prop = ScheduleProperty.query.filter_by(propertyID=id).first()
@@ -374,9 +363,23 @@ class Patient(db.Model):
         if self.caregiver:
             caregiverEmail = self.caregiver.user.email
             recipients_list = [caregiverEmail]
-            # await send_email(f"Missed Dose: {self.firstName} {self.lastName}", message, recipients_list)
+            # threading.Thread(
+            #     target=send_email,
+            #     args=(
+            #         f"Missed Dose: {self.firstName} {self.lastName}", message, recipients_list)
+            # ).start()
         self.confirm_dose(propIds)
         return message
+
+    def empty_container(self, propIds):
+        caregiverEmail = self.caregiver.user.email
+        recipients_list = [caregiverEmail]
+        message = f"You need to refill the container ASAP."
+        # threading.Thread(
+        #     target=send_email,
+        #     args=(
+        #         f"Empty Container: {self.firstName} {self.lastName}", message, recipients_list)
+        # ).start()
 
 
 class Pharmacy(Carer):

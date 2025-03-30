@@ -1,7 +1,7 @@
 from twilio.rest import Client
 import os
 from dotenv import load_dotenv
-import aiosmtplib
+import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
@@ -29,9 +29,9 @@ def sendMessage(body, destination):
     return
 
 
-async def send_email(subject, body, recipients):
+def send_email(subject, body, recipients):
     """
-    Sends an email asynchronously to multiple recipients.
+    Sends an email synchronously to multiple recipients.
 
     :param subject: Subject of the email.
     :param body: Email body content.
@@ -45,15 +45,19 @@ async def send_email(subject, body, recipients):
         msg["Subject"] = subject
         msg.attach(MIMEText(body, "plain"))
 
-        # Create SMTP client instance
-        smtp_client = aiosmtplib.SMTP(hostname=EMAIL_HOST, port=EMAIL_PORT)
+        # Connect to SMTP server
+        server = smtplib.SMTP(EMAIL_HOST, EMAIL_PORT)
+        server.starttls()  # Secure the connection
 
-        # Connect and send email
-        await smtp_client.connect()
-        await smtp_client.login(EMAIL_USERNAME, EMAIL_PASSWORD)
-        await smtp_client.sendmail(EMAIL_FROM, recipients, msg.as_string())
-        await smtp_client.quit()
+        # Login to the email account
+        server.login(EMAIL_USERNAME, EMAIL_PASSWORD)
 
-        print("Email sent successfully!")
+        # Send email
+        server.sendmail(EMAIL_FROM, recipients, msg.as_string())
+
+        # Close the connection
+        server.quit()
+
+        print("✅ Email sent successfully!")
     except Exception as e:
-        print(f"Error sending email: {e}")
+        print(f"❌ Error sending email: {e}")
