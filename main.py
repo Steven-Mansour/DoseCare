@@ -34,6 +34,21 @@ def privacyPolicy():
     return render_template("privacy.html", user=current_user.get_info())
 
 
+@main.route('/updateRpiID', methods=["POST"])
+@login_required
+def updateRpiID():
+    patient_id = int(request.form.get('patient_id'))
+    info = current_user.get_info()
+    if ((info['role'] == "patient" and info['patientID'] == patient_id) or isCarer(patient_id)):
+        patient = Patient.query.filter_by(patientID=patient_id).first()
+        patient.raspberryPiId = request.form.get('raspberryPiId')
+        db.session.commit()
+        flash("Settings updated successfully!", "success")
+    else:
+        flash("Error: Invalid operation", "failure")
+    return redirect(url_for('main.dispenser'))
+
+
 @main.route('/dispenser')
 @login_required
 def dispenser():
@@ -243,8 +258,7 @@ def expiringSchedules():
         flash("You are not allowed to access this route")
         return redirect(url_for('main.home'))
     carer = current_user.caregivers[0] if current_user.caregivers else current_user.pharmacies[0]
-    schedules = carer.get_patients_ending_schedule(
-        len(carer.patients))
+    schedules = carer.get_patients_ending_schedule(2147483647)
     return render_template("expiringSchedules.html", user=current_user.get_stats(), schedules=schedules)
 
 
@@ -256,8 +270,7 @@ def lowSupplySchedules():
         return redirect(url_for('main.home'))
     user = current_user
     carer = current_user.caregivers[0] if current_user.caregivers else current_user.pharmacies[0]
-    schedules = carer.get_lowest_pills_schedule(
-        len(carer.patients))
+    schedules = carer.get_lowest_pills_schedule(2147483647)
     return render_template("lowSupplySchedules.html", user=user.get_stats(), schedules=schedules)
 
 
@@ -604,6 +617,8 @@ def isCarer(patient_id):
     if patient.selfCarer == 1:
         if current_user.patients and current_user.patients[0].patientID == patient_id:
             return True
+        if current_user.patients:
+            return False
     carer = current_user.caregivers[0] if current_user.caregivers else current_user.pharmacies[0]
     if ((current_user.caregivers and patient.caregiverID == carer.caregiverID) or
             (current_user.pharmacies and carer.pharmacyID in [pharmacy.pharmacyID for pharmacy in patient.pharmacies])):

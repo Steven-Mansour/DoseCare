@@ -155,6 +155,9 @@ class Patient(db.Model):
 
         for schedule in schedules:
             daysLeft = 0
+            if sum(schedule.day) == 0:
+                list.append((self, schedule, float('inf')))
+                continue
             qty = schedule.remainingQty
             days = schedule.day
             frequency = schedule.frequency
