@@ -1,0 +1,96 @@
+{% extends "homeTemplate.html" %}
+{% block title %}Notifications{% endblock %}
+
+{% block pageContent %}
+<div class="max-w-3xl mx-auto p-6 min-h-screen dark:bg-gray-900 dark:text-white">
+    <h1 class="text-2xl font-bold mb-4">Notifications</h1>
+    <div id="notifications-container" class="bg-white dark:bg-gray-800 shadow-md rounded-lg overflow-hidden">
+        {% for notification in notifications %}
+        <div class="p-4 border-b flex justify-between items-center">
+            <p
+                class=" {{ 'dark:text-gray-200 text-gray-700 font-bold' if not notification.isRead else 'text-gray-500 dark:text-gray-400' }}">
+                {{ notification.message }}
+            </p>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mt-1 self-end">
+                {{ notification.timestamp.strftime('%I:%M %p %B, %d, %Y') }}
+            </p>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Pagination Controls -->
+    <div class="flex justify-between mt-4 items-center">
+        <button id="prev-page" {% if page <=1 %}disabled{% endif %}
+            class="px-4 py-2 bg-gray-300 dark:bg-gray-700 text-black dark:text-white rounded-lg hover:bg-gray-400 dark:hover:bg-gray-600 transition disabled:cursor-not-allowed">
+            &larr; Previous
+        </button>
+
+        <span class="text-sm text-gray-500 dark:text-gray-400">
+            Page: <span id="current-page">{{ page }}</span> out of <span id="total-pages">{{ total_pages }}</span>
+            <input type="number" id="page-input" class="w-10 ml-2 p-1 text-sm text-center border rounded"
+                value="{{ page }}" min="1" max="{{ total_pages }}">
+        </span>
+
+        <button id="next-page" {% if page>= total_pages %}disabled{% endif %}
+            class="px-4 py-2 bg-gray-300 dark:bg-gray-700 text-black dark:text-white rounded-lg hover:bg-gray-400
+            dark:hover:bg-gray-600 transition disabled:cursor-not-allowed">
+            Next &rarr;
+        </button>
+    </div>
+</div>
+<div id="pagination-data" data-user-id="{{ user.userID }}" data-current-page="{{ page }}"
+    data-total-pages="{{ total_pages }}">
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const paginationData = document.getElementById("pagination-data");
+        let currentPage = parseInt(paginationData.dataset.currentPage);
+        const userID = parseInt(paginationData.dataset.userId);
+        const totalPages = parseInt(paginationData.dataset.totalPages);
+
+        function loadPage(page) {
+            fetch(`/notification/notifications/${userID}?page=${page}`)
+                .then(response => response.text())
+                .then(data => {
+                    const parser = new DOMParser();
+                    const newDoc = parser.parseFromString(data, "text/html");
+
+                    // Update notifications container
+                    document.getElementById("notifications-container").innerHTML =
+                        newDoc.getElementById("notifications-container").innerHTML;
+                    document.getElementById("page-input").value = page
+                    // Update page number
+                    currentPage = page;
+                    updateButtons();
+                })
+                .catch(error => console.error("Error fetching notifications:", error));
+        }
+
+        function updateButtons() {
+            document.getElementById("prev-page").disabled = (currentPage <= 1);
+            document.getElementById("next-page").disabled = (currentPage >= totalPages);
+        }
+
+        document.getElementById("prev-page").addEventListener("click", function () {
+            if (currentPage > 1) {
+                loadPage(currentPage - 1);
+            }
+        });
+
+        document.getElementById("next-page").addEventListener("click", function () {
+            if (currentPage < totalPages) {
+                loadPage(currentPage + 1);
+            }
+        });
+        document.getElementById("page-input").addEventListener("change", function () {
+            const pageInputValue = parseInt(this.value);
+            if (pageInputValue >= 1 && pageInputValue <= totalPages) {
+                loadPage(pageInputValue);
+            } else {
+                this.value = currentPage; // Revert if invalid
+            }
+        });
+    });
+</script>
+{% endblock %}

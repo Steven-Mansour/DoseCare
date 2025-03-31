@@ -2,6 +2,7 @@ from flask import Flask, render_template, jsonify, request, Blueprint
 import asyncio
 from models import User, Pill, Caregiver, Patient, PillSchedule, ScheduleProperty
 from infrastructure import socketio
+from notifications import create_notification
 rpi = Blueprint('rpi', __name__)
 
 
@@ -50,12 +51,14 @@ def handle_notification(data):
             if patient.raspberryPiId == pi_id:
                 match event:
                     case "missed":
-                        patient.miss_dose(props)
+                        message = patient.miss_dose(props)
+                        create_notification(patient.userID, message)
                     case "released":
                         patient.confirm_dose(props)
                     case "early_release":
                         patient.confirm_dose(props)
                     case "empty":
-                        patient.empty_container(props)
+                        message = patient.empty_container(props)
+                        create_notification(patient.userID, message)
                     case _:
                         print("⚠️ Unknown event type received")

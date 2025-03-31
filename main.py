@@ -116,7 +116,7 @@ def index():
 
 @main.route('/hey')
 def hey():
-    create_notification(5, "Hello")
+    create_notification(4, "Hello")
     return "done"
 
 

@@ -159,6 +159,15 @@ class Notification(db.Model):
 
     user = db.relationship('User', back_populates='notifications')
 
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "message": self.message,
+            "timestamp": self.timestamp,
+            "isRead": self.isRead,
+            # Add other fields you need
+        }
+
 
 class Caregiver(Carer):
     caregiverID = db.Column(db.Integer, primary_key=True, autoincrement=True)
@@ -431,7 +440,7 @@ class Patient(db.Model):
         db.session.commit()
 
     def miss_dose(self, propIds):
-        message = f"{self.firstName} has missed:"
+        message = f"{self.firstName} {self.lastName} has missed:"
         for id in propIds:
             prop = ScheduleProperty.query.filter_by(propertyID=id).first()
             schedule = prop.schedule
@@ -451,12 +460,13 @@ class Patient(db.Model):
     def empty_container(self, propIds):
         caregiverEmail = self.caregiver.user.email
         recipients_list = [caregiverEmail]
-        message = f"You need to refill the container ASAP."
+        message = f"You need to refill the container for {self.firstName} {self.lastName}."
         # threading.Thread(
         #     target=send_email,
         #     args=(
         #         f"Empty Container: {self.firstName} {self.lastName}", message, recipients_list)
         # ).start()
+        return message
 
 
 class Pharmacy(Carer):
