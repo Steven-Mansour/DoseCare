@@ -459,8 +459,25 @@ class Patient(db.Model):
 
     def empty_container(self, propIds):
         caregiverEmail = self.caregiver.user.email
+        pillList = []
+        for id in propIds:
+            prop = ScheduleProperty.query.filter_by(propertyID=id).first()
+            pill = prop.schedule.pill.name
+            if pill not in pillList:
+                pillList.append(pill)
         recipients_list = [caregiverEmail]
-        message = f"You need to refill the container for {self.firstName} {self.lastName}."
+        # Format pill list using a loop
+        pill_str = ""
+        for i, pill in enumerate(pillList):
+            if i == 0:
+                pill_str += pill  # First pill
+            elif i == len(pillList) - 1:
+                pill_str += f" and {pill}"  # Last pill
+            else:
+                pill_str += f", {pill}"  # Middle pills
+
+        # Construct the message
+        message = f"You need to refill {pill_str} for {self.firstName} {self.lastName}."
         # threading.Thread(
         #     target=send_email,
         #     args=(
