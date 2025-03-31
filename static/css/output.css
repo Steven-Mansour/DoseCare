@@ -1971,6 +1971,22 @@ video {
   margin-top: 2rem;
 }
 
+.ml-\[-2\] {
+  margin-left: -2;
+}
+
+.ml-\[-2px\] {
+  margin-left: -2px;
+}
+
+.ml-\[-1px\] {
+  margin-left: -1px;
+}
+
+.mr-1 {
+  margin-right: 0.25rem;
+}
+
 .block {
   display: block;
 }
