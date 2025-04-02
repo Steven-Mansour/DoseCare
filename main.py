@@ -143,12 +143,44 @@ def assignPharmacy():
     patient = current_user.get_info()['patientID']
     patient = Patient.query.filter_by(patientID=patient).first()
     patientPharmacies = patient.pharmacies
-    pharmacies = Pharmacy.query.order_by(Pharmacy.name).limit(9).all()
+    search_query = request.args.get("search", "").strip()  # Get search term
+
+    # Filter pharmacies based on search, case-insensitive
+    if search_query:
+        pharmacies = Pharmacy.query.filter(
+            Pharmacy.name.ilike(f"%{search_query}%")).limit(9).all()
+    else:
+        # Default: show first 9 pharmacies
+        pharmacies = Pharmacy.query.limit(9).all()
+
+    if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+        return jsonify([{
+            "name": p.name,
+            "userID": p.userID,
+            "location": p.location,
+            "phoneNb": p.phoneNb,
+            "pharmacyID": p.pharmacyID
+        } for p in pharmacies])
 
     return render_template("assignPharmacy.html",
                            user=current_user.get_info(),
                            patientPharmaciesList=patientPharmacies,
                            pharmaciesList=pharmacies)
+
+
+@main.route('/messagePharmacy', methods=['POST'])
+@login_required
+def messagePharmacy():
+    user = current_user
+    if user:
+        pharmacyUserID = request.form.get('pharmacy-user-id')
+        message = request.form.get("message")
+        print(f"----------------{pharmacyUserID}-----------------")
+        create_notification(pharmacyUserID, message, notifyCaregiver=False)
+        flash("Message sent successfully!", "success")
+        return redirect(url_for('main.assignPharmacy'))
+    flash("Error: please login to try again", "failure")
+    return redirect(url_for('main.assignPharmacy'))
 
 
 @main.route('/assignPharmacy', methods=['POST'])
