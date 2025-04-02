@@ -501,7 +501,7 @@ class Patient(db.Model):
                 # Calculate how many years and months it exceeds
                 extra_years = int(months_difference // 12)
                 extra_months = int(months_difference % 12)
-                str = "The last checkup was "
+                str = f"The last checkup for {self.firstName} {self.lastName} was "
                 if extra_years > 0:
                     str += f"{extra_years} year(s) "
                     if extra_months > 0:
