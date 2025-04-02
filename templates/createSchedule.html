@@ -298,7 +298,8 @@
                     data.forEach(pill => {
                         const pillItem = document.createElement('div');
                         pillItem.classList.add('pill-item', 'w-full', 'cursor-pointer', 'py-2', 'px-4', 'text-sm', 'text-gray-900', 'hover:bg-blue-100', 'hover:text-blue-600', 'focus:outline-none');
-                        pillItem.textContent = `${pill.name} (${pill.shape})`;
+                        pillItem.textContent = `${pill.name} ${pill.boxQuantity} pcs (${pill.shape})`;
+                        //pillItem.textContent = `${pill.name} ${pill.boxQuantity} pcs (${pill.shape}: ${pill.size}mm)`;
 
                         // Store the pill name and ID when clicked
                         pillItem.onclick = function () {

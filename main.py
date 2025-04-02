@@ -137,12 +137,15 @@ def profile(user_id):
 @main.route('/assignPharmacy')
 @login_required
 def assignPharmacy():
-    if (current_user.get_info()['role'] != 'patient'):
+    info = current_user.get_info()
+    patientPharmacies = ""
+    if (info['role'] not in ['patient', 'caregiver']):
         flash("You are not allowed to access this page")
         return redirect(url_for('main.home'))
-    patient = current_user.get_info()['patientID']
-    patient = Patient.query.filter_by(patientID=patient).first()
-    patientPharmacies = patient.pharmacies
+    if (info['role'] == 'patient'):
+        patient = current_user.get_info()['patientID']
+        patient = Patient.query.filter_by(patientID=patient).first()
+        patientPharmacies = patient.pharmacies
     search_query = request.args.get("search", "").strip()  # Get search term
 
     # Filter pharmacies based on search, case-insensitive
@@ -163,7 +166,7 @@ def assignPharmacy():
         } for p in pharmacies])
 
     return render_template("assignPharmacy.html",
-                           user=current_user.get_info(),
+                           user=info,
                            patientPharmaciesList=patientPharmacies,
                            pharmaciesList=pharmacies)
 
@@ -175,7 +178,6 @@ def messagePharmacy():
     if user:
         pharmacyUserID = request.form.get('pharmacy-user-id')
         message = request.form.get("message")
-        print(f"----------------{pharmacyUserID}-----------------")
         create_notification(pharmacyUserID, message, notifyCaregiver=False)
         flash("Message sent successfully!", "success")
         return redirect(url_for('main.assignPharmacy'))
@@ -588,7 +590,7 @@ def search_pill():
     # Query the database for pills that match the name
     pills = Pill.query.filter(Pill.name.ilike(f'%{pill_name}%')).all()
     # Convert results to a list of dictionaries
-    result = [{'name': pill.name, 'id': pill.pillID, 'shape': pill.shape}
+    result = [{'name': pill.name, 'id': pill.pillID, 'shape': pill.shape, 'size': pill.size, 'boxQuantity': pill.boxQuantity}
               for pill in pills]
 
     return jsonify(result)

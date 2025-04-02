@@ -30,6 +30,7 @@
                     class="p-2 bg-green-500 dark:bg-green-600 text-white rounded-md shadow-md hover:bg-green-600 dark:hover:bg-green-700 transition">
                     <i class="fas fa-comment-alt"></i>
                 </button>
+                {%if user.role == 'patient'%}
                 <!-- Add Pharmacy (+) Icon -->
                 <form action="{{url_for('main.assignPharmacy')}}" method="POST">
                     <input name="pharmacyID" id="pharmacyID" class="hidden" value="{{pharmacy.pharmacyID}}">
@@ -38,6 +39,7 @@
                         <i class="fas fa-plus"></i>
                     </button>
                 </form>
+                {%endif%}
 
             </div>
         </div>
@@ -69,11 +71,12 @@
 
 
     </form> -->
+    {%if user.role == 'patient'%}
     <h1 class="text-2xl mt-10 font-bold text-gray-900 dark:text-white text-center mb-6">Pharmacies You Chose</h1>
     <div class="space-y-4 mt-2">
         {% for pharmacy in patientPharmaciesList %}
         <div class="flex items-center justify-between bg-blue-500 text-white px-4 py-2 rounded-2xl shadow-md w-64 opacity-80 
-                        hover:bg-blue-600 hover:shadow-lg hover:scale-105 transition-transform duration-200">
+                            hover:bg-blue-600 hover:shadow-lg hover:scale-105 transition-transform duration-200">
             <span class="font-semibold">{{ pharmacy.name }}</span>
             <form action="{{url_for('main.unassignPharmacy')}}" method="POST">
                 <input class="hidden" type="hidden" name="pharmacy-ID" value={{pharmacy.pharmacyID}}>
@@ -88,6 +91,7 @@
         </div>
         {% endfor %}
     </div>
+    {%endif%}
     <!-- Message Box Modal -->
     <div id="messageBox" class="hidden fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
         <form action="{{url_for('main.messagePharmacy')}}" method="POST">

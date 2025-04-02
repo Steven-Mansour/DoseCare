@@ -11,7 +11,7 @@
                 class=" {{ 'dark:text-gray-200 text-gray-700 font-bold' if not notification.isRead else 'text-gray-500 dark:text-gray-400' }}">
                 {{ notification.message }}
             </p>
-            <p class="text-sm text-gray-500 dark:text-gray-400 mt-1 self-end">
+            <p class="ml-2 text-sm text-gray-500 dark:text-gray-400 mt-1 self-end">
                 {{ notification.timestamp.strftime('%I:%M %p %B, %d, %Y') }}
             </p>
         </div>
