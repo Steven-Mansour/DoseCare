@@ -142,8 +142,13 @@ def assignPharmacy():
         return redirect(url_for('main.home'))
     patient = current_user.get_info()['patientID']
     patient = Patient.query.filter_by(patientID=patient).first()
-    pharmacies = patient.pharmacies
-    return render_template("assignPharmacy.html", user=current_user.get_info(), pharmaciesList=pharmacies)
+    patientPharmacies = patient.pharmacies
+    pharmacies = Pharmacy.query.order_by(Pharmacy.name).limit(9).all()
+
+    return render_template("assignPharmacy.html",
+                           user=current_user.get_info(),
+                           patientPharmaciesList=patientPharmacies,
+                           pharmaciesList=pharmacies)
 
 
 @main.route('/assignPharmacy', methods=['POST'])
