@@ -117,14 +117,14 @@ def index():
 
 @main.route('/hey')
 def hey():
-    create_notification(4, "Hello")
-    return "done"
+    return "hey"
 
 
 @main.route('/home')
 @login_required
 def home():
-    return render_template("home.html", user=current_user.get_stats())
+    user = current_user.get_stats()
+    return render_template("home.html", user=user)
 
 
 @main.route('/profile/<int:user_id>')

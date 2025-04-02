@@ -485,6 +485,34 @@ class Patient(db.Model):
         # ).start()
         return message
 
+    def calculate_last_checkup(self):
+        # Get the list of schedules
+        schedules = self.pill_schedules
+        if schedules:
+            latest_start_date = max(
+                schedule.startDate for schedule in schedules)
+            today = datetime.today().date()
+            delta_days = (today - latest_start_date).days + 300
+            # Convert days to months (approximately 30.44 days per month)
+            months_difference = delta_days / 30.44
+
+            # Check if the difference exceeds 6 months
+            if months_difference > 6:
+                # Calculate how many years and months it exceeds
+                extra_years = int(months_difference // 12)
+                extra_months = int(months_difference % 12)
+                str = "The last checkup was "
+                if extra_years > 0:
+                    str += f"{extra_years} year(s) "
+                    if extra_months > 0:
+                        str += f"and "
+                if extra_months > 0:
+                    str += f"{extra_months} month(s) ago."
+                str += "\nWe recommend you see your doctor soon."
+                return ["invalid", str]
+
+        return ["valid", f"The last checkup is within the last 6 months."]
+
 
 class Pharmacy(Carer):
     pharmacyID = db.Column(db.Integer, primary_key=True, autoincrement=True)

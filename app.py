@@ -4,9 +4,12 @@ from dotenv import load_dotenv
 from flask_login import LoginManager
 from flask_migrate import Migrate
 import os
+from flask_apscheduler import APScheduler
+from cronJobs import check_if_patients_need_checkup
 
 
 load_dotenv()
+scheduler = APScheduler()  # For Cron jobs
 
 
 def create_app():
@@ -41,6 +44,19 @@ def create_app():
 
     from rpi import rpi as rpi_blueprint
     app.register_blueprint(rpi_blueprint, url_prefix='/rpi')
+    # **Initialize the scheduler with app context**
+    scheduler.init_app(app)
+    scheduler.start()
+
+    # Add cron job
+    scheduler.add_job(id='Monthly Checkup Task',
+                      func=check_if_patients_need_checkup,
+                      args=[app],
+                      trigger='cron',
+                      day=1,  # Runs on the 1st day of each month
+                      hour=0,  # At midnight (00:00)
+                      minute=0)  # Runs every 5 seconds
+
     if __name__ == '__main__':
         socketio.run(app, debug=True, host="0.0.0.0", port=5000)
     return app
