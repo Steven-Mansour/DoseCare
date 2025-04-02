@@ -507,8 +507,8 @@ class Patient(db.Model):
                     if extra_months > 0:
                         str += f"and "
                 if extra_months > 0:
-                    str += f"{extra_months} month(s) ago."
-                str += "\nWe recommend you see your doctor soon."
+                    str += f"{extra_months} month(s) "
+                str += "ago.\nWe recommend you see your doctor soon."
                 return ["invalid", str]
 
         return ["valid", f"The last checkup is within the last 6 months."]

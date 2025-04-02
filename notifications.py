@@ -88,7 +88,7 @@ def get_notifications(user_id):
         page = request.args.get('page', 1, type=int)
         per_page = 10  # Number of notifications per page
         pagination = Notification.query.filter_by(userID=user_id).order_by(
-            Notification.timestamp.desc()).paginate(page=page, per_page=per_page, error_out=False)
+            Notification.id.desc()).paginate(page=page, per_page=per_page, error_out=False)
 
         notifications_snapshot = [notif.to_dict()
                                   for notif in pagination.items]
