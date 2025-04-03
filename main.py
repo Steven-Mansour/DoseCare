@@ -41,10 +41,14 @@ def updateRpiID():
     patient_id = int(request.form.get('patient_id'))
     info = current_user.get_info()
     if ((info['role'] == "patient" and info['patientID'] == patient_id) or isCarer(patient_id)):
-        patient = Patient.query.filter_by(patientID=patient_id).first()
-        patient.raspberryPiId = request.form.get('raspberryPiId')
-        db.session.commit()
-        flash("Settings updated successfully!", "success")
+        rpiId = request.form.get('raspberryPiId')
+        isAlreadyUsed = Patient.query.filter_by(raspberryPiId=rpiId).first()
+        if not isAlreadyUsed:
+            patient = Patient.query.filter_by(patientID=patient_id).first()
+            patient.raspberryPiId = rpiId
+            db.session.commit()
+            flash("Settings updated successfully!", "success")
+        flash("Error: Invalid operation", "failure")
     else:
         flash("Error: Invalid operation", "failure")
     return redirect(url_for('main.dispenser'))

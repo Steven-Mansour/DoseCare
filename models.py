@@ -545,18 +545,11 @@ class PillSchedule(db.Model):
     # Foreign Keys
     patientID = db.Column(db.Integer, db.ForeignKey(
         'patient.patientID'), nullable=False)
-    caregiverID = db.Column(db.Integer, db.ForeignKey(
-        'caregiver.caregiverID'), nullable=True)
-    pharmacyID = db.Column(db.Integer, db.ForeignKey(
-        'pharmacy.pharmacyID'), nullable=True)
     pillID = db.Column(db.Integer, db.ForeignKey(
         'pill.pillID'), nullable=False)  # Added pillID foreign key
 
     # Relationships
     patient = db.relationship('Patient', backref='pill_schedules', lazy=True)
-    caregiver = db.relationship(
-        'Caregiver', backref='pill_schedules', lazy=True)
-    pharmacy = db.relationship('Pharmacy', backref='pill_schedules', lazy=True)
     pill = db.relationship('Pill', backref='pill_schedules',
                            lazy=True)  # Relationship with Pill
 
