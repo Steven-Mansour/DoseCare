@@ -54,6 +54,33 @@ def updateRpiID():
     return redirect(url_for('main.dispenser'))
 
 
+@main.route('/updateProfile', methods=["POST"])
+@login_required
+def updateProfile():
+    user = current_user
+    info = user.get_info()
+    role = info['role']
+    if role == 'caregiver':
+        caregiver = Caregiver(
+            firstName=request.form.get('name'),
+            lastName=request.form.get('lastName'),
+            phoneNb=request.form.get('phoneNb')
+        )
+        user.caregivers[0].updateProfile(caregiver)
+        flash("Updated profile successfully", "success")
+    elif role == 'patient':
+        patient = Patient(
+            firstName=request.form.get('name'),
+            lastName=request.form.get('lastName'),
+            emergencyContactNb=request.form.get('phoneNb')
+        )
+        user.patients[0].updateProfile(patient)
+        flash("Updated profile successfully", "success")
+    else:
+        flash("Failed to upload profile. Try again later", "failure")
+    return redirect(url_for('main.profile', user_id=user.userID))
+
+
 @main.route('/dispenser')
 @login_required
 def dispenser():

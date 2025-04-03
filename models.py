@@ -180,6 +180,13 @@ class Caregiver(Carer):
     # Define relationship with User
     user = db.relationship('User', backref='caregivers', lazy=True)
 
+    def updateProfile(self, newCaregiver):
+        caregiver = self
+        caregiver.firstName = newCaregiver.firstName
+        caregiver.lastName = newCaregiver.lastName
+        caregiver.phoneNb = newCaregiver.phoneNb
+        db.session.commit()
+
 
 patient_pharmacy = db.Table(
     'patient_pharmacy',
@@ -208,6 +215,12 @@ class Patient(db.Model):
     user = db.relationship('User', backref='patients', lazy=True)
     pharmacies = db.relationship(
         'Pharmacy', secondary=patient_pharmacy, back_populates='patients')
+
+    def updateProfile(self, newPatient):
+        self.firstName = newPatient.firstName
+        self.lastName = newPatient.lastName
+        self.emergencyContactNb = newPatient.emergencyContactNb
+        db.session.commit()
 
     def updateCheckupDate(self, date):
         self.lastCheckupDate = date
