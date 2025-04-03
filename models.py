@@ -41,6 +41,15 @@ class User(db.Model, UserMixin):
                       nullable=False)
     password_hash = db.Column(db.String(256), nullable=False)
 
+    notifications = db.relationship(
+        'Notification', back_populates='user', cascade="all, delete-orphan")
+
+    def get_unread_notifications(self):
+        # Execute query to get all unread notifications
+        notif = Notification.query.filter_by(
+            userID=self.userID, isRead=False).all()
+        return len(notif)  # Return the count of unread notifications
+
     def set_password(self, password):
         """Hash and store the password"""
         self.password_hash = generate_password_hash(password)
@@ -56,34 +65,108 @@ class User(db.Model, UserMixin):
     def get_info(self):
         """Check if the user is a patient, caregiver, or pharmacist and return a dictionary."""
         if self.patients:  # Checks if the user has an associated patient record
-            return {"role": "patient", "name": self.patients[0].firstName, "lastName": self.patients[0].lastName,  "patientID": self.patients[0].patientID,
-                    "email": self.email, "phone": self.patients[0].emergencyContactNb, "userID": self.userID, "selfCarer": self.patients[0].selfCarer}
+            return {
+                "role": "patient", ""
+                "name": self.patients[0].firstName,
+                "lastName": self.patients[0].lastName,
+                "patientID": self.patients[0].patientID,
+                "email": self.email,
+                "phone": self.patients[0].emergencyContactNb,
+                "userID": self.userID,
+                "selfCarer": self.patients[0].selfCarer,
+                "notifications": self.get_unread_notifications()
+            }
+
         elif self.caregivers:  # Checks if the user has an associated caregiver record
-            return {"role": "caregiver", "name": self.caregivers[0].firstName, "lastName": self.caregivers[0].lastName, "caregiverID": self.caregivers[0].caregiverID,
-                    "email": self.email, "phone": self.caregivers[0].phoneNb, "userID": self.userID}
+            return {
+                "role": "caregiver",
+                "name": self.caregivers[0].firstName,
+                "lastName": self.caregivers[0].lastName,
+                "caregiverID": self.caregivers[0].caregiverID,
+                "email": self.email,
+                "phone": self.caregivers[0].phoneNb,
+                "userID": self.userID,
+                "notifications": self.get_unread_notifications()
+            }
+
         elif self.pharmacies:  # Checks if the user has an associated pharmacy record
-            return {"role": "pharmacist", "name": self.pharmacies[0].name, "pharmacyID": self.pharmacies[0].pharmacyID,
-                    "email": self.email, "phone": self.pharmacies[0].phoneNb, "location": self.pharmacies[0].location, "userID": self.userID}
+            return {
+                "role": "pharmacist",
+                "name": self.pharmacies[0].name,
+                "pharmacyID": self.pharmacies[0].pharmacyID,
+                "notifications": self.get_unread_notifications(),
+                "email": self.email,
+                "phone": self.pharmacies[0].phoneNb,
+                "location": self.pharmacies[0].location,
+                "userID": self.userID
+            }
         # If the user doesn't belong to any category
         return {"role": "unknown", "name": "N/A"}
 
     def get_stats(self):
         """Check if the user is a patient, caregiver, or pharmacist and return a dictionary."""
         if self.patients:  # Checks if the user has an associated patient record
-            return {"role": "patient", "name": self.patients[0].firstName, "patientID": self.patients[0].patientID, "email": self.email,  "patient": self.patients[0],
-                    "caregiver": self.patients[0].caregiver, "nextDose": self.patients[0].get_next_dose(), "remQty": self.patients[0].get_qty_per_container(), "userID": self.userID,
-                    "selfCarer": self.patients[0].selfCarer}
+            return {
+                "role": "patient",
+                "name": self.patients[0].firstName,
+                "patientID": self.patients[0].patientID,
+                "email": self.email,
+                "patient": self.patients[0],
+                "caregiver": self.patients[0].caregiver,
+                "nextDose": self.patients[0].get_next_dose(),
+                "remQty": self.patients[0].get_qty_per_container(),
+                "userID": self.userID,
+                "selfCarer": self.patients[0].selfCarer,
+                "notifications": self.get_unread_notifications()
+            }
         elif self.caregivers:  # Checks if the user has an associated caregiver record
-            return {"role": "caregiver", "name": self.caregivers[0].firstName, "caregiverID": self.caregivers[0].caregiverID, "email": self.email,
-                    "caregiver": self.caregivers[0], "nbOfPatients": self.caregivers[0].get_nb_of_patients(),
-                    "patientsEndingSchedules": self.caregivers[0].get_patients_ending_schedule(), "lowPillsSchedules": self.caregivers[0].get_lowest_pills_schedule(), "userID": self.userID}
+            return {
+                "role": "caregiver",
+                "name": self.caregivers[0].firstName,
+                "caregiverID": self.caregivers[0].caregiverID,
+                "email": self.email,
+                "caregiver": self.caregivers[0],
+                "nbOfPatients": self.caregivers[0].get_nb_of_patients(),
+                "notifications": self.get_unread_notifications(),
+                "patientsEndingSchedules": self.caregivers[0].get_patients_ending_schedule(),
+                "lowPillsSchedules": self.caregivers[0].get_lowest_pills_schedule(),
+                "userID": self.userID
+            }
         elif self.pharmacies:  # Checks if the user has an associated pharmacy record
-            return {"role": "pharmacist", "name": self.pharmacies[0].name, "pharmacyID": self.pharmacies[0].pharmacyID, "email": self.email, "pharmacy": self.pharmacies[0],
-                    "nbOfPatients": self.pharmacies[0].get_nb_of_patients(),
-                    "patientsEndingSchedules": self.pharmacies[0].get_patients_ending_schedule(), "lowPillsSchedules": self.pharmacies[0].get_lowest_pills_schedule(), "userID": self.userID
-                    }
+            return {
+                "role": "pharmacist",
+                "name": self.pharmacies[0].name,
+                "pharmacyID": self.pharmacies[0].pharmacyID,
+                "email": self.email,
+                "pharmacy": self.pharmacies[0],
+                "nbOfPatients": self.pharmacies[0].get_nb_of_patients(),
+                "notifications": self.get_unread_notifications(),
+                "patientsEndingSchedules": self.pharmacies[0].get_patients_ending_schedule(),
+                "lowPillsSchedules": self.pharmacies[0].get_lowest_pills_schedule(),
+                "userID": self.userID
+            }
         # If the user doesn't belong to any category
         return {"role": "unknown", "name": "N/A"}
+
+
+class Notification(db.Model):
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    userID = db.Column(db.Integer, db.ForeignKey(
+        'user.userID'), nullable=False)  # Associate with a user
+    message = db.Column(db.String(255), nullable=False)
+    timestamp = db.Column(db.DateTime, default=datetime.now)
+    isRead = db.Column(db.Boolean, default=False)  # Track read status
+
+    user = db.relationship('User', back_populates='notifications')
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "message": self.message,
+            "timestamp": self.timestamp,
+            "isRead": self.isRead,
+            # Add other fields you need
+        }
 
 
 class Caregiver(Carer):
@@ -114,6 +197,7 @@ class Patient(db.Model):
     selfCarer = db.Column(db.Boolean, nullable=False, default=False)
     raspberryPiId = db.Column(db.String(255), unique=True, nullable=True)
     emergencyContactNb = db.Column(db.String(15), nullable=False)
+    lastCheckupDate = db.Column(db.DateTime, nullable=True, default=None)
     caregiverID = db.Column(db.Integer, db.ForeignKey(
         'caregiver.caregiverID'), nullable=True)  # Foreign Key from CAREGIVER
     userID = db.Column(db.Integer, db.ForeignKey('user.userID'),
@@ -124,6 +208,11 @@ class Patient(db.Model):
     user = db.relationship('User', backref='patients', lazy=True)
     pharmacies = db.relationship(
         'Pharmacy', secondary=patient_pharmacy, back_populates='patients')
+
+    def updateCheckupDate(self, date):
+        self.lastCheckupDate = date
+        db.session.commit()
+        return
 
     def get_ending_schedules(self, list):
         now = datetime.now().date()
@@ -155,6 +244,9 @@ class Patient(db.Model):
 
         for schedule in schedules:
             daysLeft = 0
+            if sum(schedule.day) == 0:
+                list.append((self, schedule, float('inf')))
+                continue
             qty = schedule.remainingQty
             days = schedule.day
             frequency = schedule.frequency
@@ -354,7 +446,7 @@ class Patient(db.Model):
         db.session.commit()
 
     def miss_dose(self, propIds):
-        message = f"{self.firstName} has missed:"
+        message = f"{self.firstName} {self.lastName} has missed:"
         for id in propIds:
             prop = ScheduleProperty.query.filter_by(propertyID=id).first()
             schedule = prop.schedule
@@ -373,13 +465,57 @@ class Patient(db.Model):
 
     def empty_container(self, propIds):
         caregiverEmail = self.caregiver.user.email
+        pillList = []
+        for id in propIds:
+            prop = ScheduleProperty.query.filter_by(propertyID=id).first()
+            pill = prop.schedule.pill.name
+            if pill not in pillList:
+                pillList.append(pill)
         recipients_list = [caregiverEmail]
-        message = f"You need to refill the container ASAP."
+        # Format pill list using a loop
+        pill_str = ""
+        for i, pill in enumerate(pillList):
+            if i == 0:
+                pill_str += pill  # First pill
+            elif i == len(pillList) - 1:
+                pill_str += f" and {pill}"  # Last pill
+            else:
+                pill_str += f", {pill}"  # Middle pills
+
+        # Construct the message
+        message = f"You need to refill {pill_str} for {self.firstName} {self.lastName}."
         # threading.Thread(
         #     target=send_email,
         #     args=(
         #         f"Empty Container: {self.firstName} {self.lastName}", message, recipients_list)
         # ).start()
+        return message
+
+    def calculate_last_checkup(self):
+        lastCheckupDate = self.lastCheckupDate
+        if lastCheckupDate:
+            lastCheckupDate = lastCheckupDate.date()
+            today = datetime.today().date()
+            delta_days = (today - lastCheckupDate).days
+            # Convert days to months (approximately 30.44 days per month)
+            months_difference = delta_days / 30.44
+
+            # Check if the difference exceeds 6 months
+            if months_difference > 6:
+                # Calculate how many years and months it exceeds
+                extra_years = int(months_difference // 12)
+                extra_months = int(months_difference % 12)
+                str = f"The last checkup for {self.firstName} {self.lastName} was "
+                if extra_years > 0:
+                    str += f"{extra_years} year(s) "
+                    if extra_months > 0:
+                        str += f"and "
+                if extra_months > 0:
+                    str += f"{extra_months} month(s) "
+                str += "ago.\nWe recommend seeing the doctor soon."
+                return ["invalid", str]
+
+        return ["valid", f"The last checkup is within the last 6 months."]
 
 
 class Pharmacy(Carer):

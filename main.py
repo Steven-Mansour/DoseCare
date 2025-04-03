@@ -4,7 +4,8 @@ from infrastructure import db
 from flask_login import login_required, current_user
 from datetime import datetime, timedelta
 from messages import sendMessage, send_email
-from rpi import send_json_to_pi
+from rpi import send_json_to_pi, clients
+from notifications import create_notification
 
 main = Blueprint('main', __name__)
 
@@ -34,6 +35,60 @@ def privacyPolicy():
     return render_template("privacy.html", user=current_user.get_info())
 
 
+@main.route('/updateRpiID', methods=["POST"])
+@login_required
+def updateRpiID():
+    patient_id = int(request.form.get('patient_id'))
+    info = current_user.get_info()
+    if ((info['role'] == "patient" and info['patientID'] == patient_id) or isCarer(patient_id)):
+        patient = Patient.query.filter_by(patientID=patient_id).first()
+        patient.raspberryPiId = request.form.get('raspberryPiId')
+        db.session.commit()
+        flash("Settings updated successfully!", "success")
+    else:
+        flash("Error: Invalid operation", "failure")
+    return redirect(url_for('main.dispenser'))
+
+
+@main.route('/dispenser')
+@login_required
+def dispenser():
+    info = current_user.get_info()
+    if info['role'] == 'patient':
+        patient = info['patientID']
+        patient = Patient.query.filter_by(patientID=patient).first()
+        color = "red"
+        if patient.raspberryPiId in clients:
+            color = "green"
+        list1 = []
+        list1.append({
+            "patientID": patient.patientID,
+            "firstName": patient.firstName,
+            "lastName": patient.lastName,
+            "raspberryPiId": patient.raspberryPiId,
+            "color": color
+        })
+        return render_template('dispenser.html', list=list1, user=current_user.get_info())
+    carer = current_user.caregivers[0] if current_user.caregivers else current_user.pharmacies[0]
+    patients = carer.get_patients()
+    patient_list = []  # Use a list, not a dictionary
+
+    for patient in patients:
+        color = "red"
+        if patient.raspberryPiId in clients:
+            color = "green"
+
+        patient_list.append({
+            "patientID": patient.patientID,
+            "firstName": patient.firstName,
+            "lastName": patient.lastName,
+            "raspberryPiId": patient.raspberryPiId,
+            "color": color
+        })
+
+    return render_template('dispenser.html', list=patient_list, user=current_user.get_info())
+
+
 @main.route('/extendSchedule', methods=["POST"])
 @login_required
 def extendSchedule():
@@ -61,24 +116,17 @@ def index():
 
 
 @main.route('/hey')
-async def hey():
-    # patient = Patient.query.filter_by(patientID=2).first()
-    # caregiver = Caregiver.query.filter_by(caregiverID=13).first()
-    # caregiver.get_lowest_pills_schedule()
-    # return "hey"
-    # message = await patient.miss_dose([24, 25, 26])
-    # recipients_list = ["stvnmnsr@gmail.com", "steven.mansour@lau.edu"]
-    # await send_email("Async Email Subject", "This is an async test email body.", recipients_list)
-    # return patient.send_schedule()
-    # return message
-    send_json_to_pi('raspberry_pi_1')
-    return "done"
+def hey():
+    patient = Patient.query.filter_by(patientID=2).first()
+    [valid, message] = patient.calculate_last_checkup()
+    return message
 
 
 @main.route('/home')
 @login_required
 def home():
-    return render_template("home.html", user=current_user.get_stats())
+    user = current_user.get_stats()
+    return render_template("home.html", user=user)
 
 
 @main.route('/profile/<int:user_id>')
@@ -92,22 +140,62 @@ def profile(user_id):
 @main.route('/assignPharmacy')
 @login_required
 def assignPharmacy():
-    if (current_user.get_info()['role'] != 'patient'):
+    info = current_user.get_info()
+    patientPharmacies = ""
+    if (info['role'] not in ['patient', 'caregiver']):
         flash("You are not allowed to access this page")
         return redirect(url_for('main.home'))
-    patient = current_user.get_info()['patientID']
-    patient = Patient.query.filter_by(patientID=patient).first()
-    pharmacies = patient.pharmacies
-    return render_template("assignPharmacy.html", user=current_user.get_info(), pharmaciesList=pharmacies)
+    if (info['role'] == 'patient'):
+        patient = current_user.get_info()['patientID']
+        patient = Patient.query.filter_by(patientID=patient).first()
+        patientPharmacies = patient.pharmacies
+    search_query = request.args.get("search", "").strip()  # Get search term
+
+    # Filter pharmacies based on search, case-insensitive
+    if search_query:
+        pharmacies = Pharmacy.query.filter(
+            Pharmacy.name.ilike(f"%{search_query}%")).limit(9).all()
+    else:
+        # Default: show first 9 pharmacies
+        pharmacies = Pharmacy.query.limit(9).all()
+
+    if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+        return jsonify([{
+            "name": p.name,
+            "userID": p.userID,
+            "location": p.location,
+            "phoneNb": p.phoneNb,
+            "pharmacyID": p.pharmacyID
+        } for p in pharmacies])
+
+    return render_template("assignPharmacy.html",
+                           user=info,
+                           patientPharmaciesList=patientPharmacies,
+                           pharmaciesList=pharmacies)
+
+
+@main.route('/messagePharmacy', methods=['POST'])
+@login_required
+def messagePharmacy():
+    user = current_user
+    if user:
+        pharmacyUserID = request.form.get('pharmacy-user-id')
+        message = request.form.get("message")
+        create_notification(pharmacyUserID, message, notifyCaregiver=False)
+        flash("Message sent successfully!", "success")
+        return redirect(url_for('main.assignPharmacy'))
+    flash("Error: please login to try again", "failure")
+    return redirect(url_for('main.assignPharmacy'))
 
 
 @main.route('/assignPharmacy', methods=['POST'])
 @login_required
 def assignPharmacyPost():
-    if (current_user.get_info()['role'] != 'patient'):
+    info = current_user.get_info()
+    if (info['role'] != 'patient'):
         flash("You are not allowed to access this page")
         return redirect(url_for('main.home'))
-    patient = current_user.get_info()['patientID']
+    patient = info['patientID']
     patient = Patient.query.filter_by(patientID=patient).first()
     pharmacy = Pharmacy.query.filter_by(
         pharmacyID=request.form.get('pharmacyID')).first()
@@ -126,10 +214,11 @@ def assignPharmacyPost():
 @main.route('/unassignPharmacy', methods=['POST'])
 @login_required
 def unassignPharmacy():
-    if (current_user.get_info()['role'] != 'patient'):
+    info = current_user.get_info()
+    if (info['role'] != 'patient'):
         flash("You are not allowed to access this page", "failure")
         return redirect(url_for('main.home'))
-    patient = current_user.get_info()['patientID']
+    patient = info['patientID']
     patient = Patient.query.filter_by(patientID=patient).first()
     pharmacy_id = request.form.get("pharmacy-ID")
     print(pharmacy_id)
@@ -159,16 +248,17 @@ def getNextDose(patient_id):
 def viewCalendar(patient_id):
     patient = Patient.query.filter_by(patientID=patient_id).first()
     role = current_user.get_info()['role']
+    info = current_user.get_info()
 
-    if ((role == 'caregiver' and patient.caregiverID != current_user.get_info()['caregiverID']) or
-        ((role == 'patient' and patient.patientID != current_user.get_info()['patientID']) or
+    if ((role == 'caregiver' and patient.caregiverID != info['caregiverID']) or
+        ((role == 'patient' and patient.patientID != info['patientID']) or
          (role == 'pharmacy' and current_user.pharmacies[0].pharmacyID not in [
           pharmacy.pharmacyID for pharmacy in patient.pharmacies])
          )):
         flash("You cannot access this patients data")
         return redirect(url_for('main.home'))
     monthlySched = patient.get_monthly_schedule()
-    return render_template("calendar.html", user=current_user.get_info(), patient_id=patient_id,
+    return render_template("calendar.html", user=info, patient_id=patient_id,
                            cal=monthlySched["cal"],
                            year=monthlySched["current_year"],
                            month=monthlySched["month_name"],
@@ -205,8 +295,7 @@ def expiringSchedules():
         flash("You are not allowed to access this route")
         return redirect(url_for('main.home'))
     carer = current_user.caregivers[0] if current_user.caregivers else current_user.pharmacies[0]
-    schedules = carer.get_patients_ending_schedule(
-        len(carer.patients))
+    schedules = carer.get_patients_ending_schedule(2147483647)
     return render_template("expiringSchedules.html", user=current_user.get_stats(), schedules=schedules)
 
 
@@ -218,9 +307,24 @@ def lowSupplySchedules():
         return redirect(url_for('main.home'))
     user = current_user
     carer = current_user.caregivers[0] if current_user.caregivers else current_user.pharmacies[0]
-    schedules = carer.get_lowest_pills_schedule(
-        len(carer.patients))
+    schedules = carer.get_lowest_pills_schedule(2147483647)
     return render_template("lowSupplySchedules.html", user=user.get_stats(), schedules=schedules)
+
+
+@main.route('/updateCheckupDate', methods=['POST'])
+@login_required
+def updateCheckupDate():
+    patientID = int(request.form.get("patientID"))
+    info = current_user.get_info()
+    if (info['role'] == "patient" and info['patientID'] == patientID) or isCarer(patientID):
+        newDate = request.form.get("checkupDate")
+        patient = Patient.query.filter_by(patientID=patientID).first()
+        if patient:
+            patient.updateCheckupDate(newDate)
+            flash("Checkup date updated successfully", "success")
+            return redirect(url_for('main.schedule', patient_id=patientID))
+    flash("Failed to update checkup date", "failure")
+    return redirect(url_for('main.schedule', patient_id=patientID))
 
 
 @main.route('/schedule/<int:patient_id>')
@@ -401,32 +505,35 @@ def editSchedule_post(schedule_id):
 @main.route('/createPill')
 @login_required
 def createPill():
-    if current_user.get_info()['role'] != 'pharmacist':
+    info = current_user.get_info()
+    if info['role'] != 'pharmacist':
         flash("This page requires pharmacist priveleges", "failure")
         return redirect(url_for('main.home'))
-    return render_template("createPill.html", user=current_user.get_info())
+    return render_template("createPill.html", user=info)
 
 
 @main.route('/viewPatients')
 @login_required
 def viewPatients():
-    if current_user.get_info()['role'] not in 'caregiver pharmacist':
+    info = current_user.get_info()
+    if info['role'] not in 'caregiver pharmacist':
         return redirect(url_for('main.home'))
     session['breadcrumbs'] = [
         {'name': 'Home', 'url': url_for('main.home')},
         {'name': 'Patients', 'url': url_for('main.viewPatients')}
     ]
     carer = current_user.caregivers[0] if current_user.caregivers else current_user.pharmacies[0]
-    return render_template("viewPatients.html", user=current_user.get_info(), patients=carer.patients)
+    return render_template("viewPatients.html", user=info, patients=carer.patients)
 
 
 @main.route('/removeCaregiver/<int:patient_id>', methods=['POST'])
 @login_required
 def removeCaregiver(patient_id):
-    if current_user.get_info()['role'] != 'patient':
+    info = current_user.get_info()
+    if info['role'] != 'patient':
         flash('You need patient privileges!', "failure")
         return redirect(url_for('main.home'))
-    if current_user.get_info()['patientID'] != patient_id:
+    if info['patientID'] != patient_id:
         flash("You are not allowed to change another patient's data!", "failure")
         return redirect(url_for('main.home'))
     patient = Patient.query.filter_by(patientID=patient_id).first()
@@ -439,10 +546,11 @@ def removeCaregiver(patient_id):
 @main.route('/assignSelfCaregiver/<int:patient_id>', methods=['POST'])
 @login_required
 def assignSelfCaregiver(patient_id):
-    if current_user.get_info()['role'] != 'patient':
+    info = current_user.get_info()
+    if info['role'] != 'patient':
         flash('You need patient privileges!', "failure")
         return redirect(url_for('main.home'))
-    if current_user.get_info()['patientID'] != patient_id:
+    if info['patientID'] != patient_id:
         flash("You are not allowed to change another patient's data!", "failure")
         return redirect(url_for('main.home'))
     patient = Patient.query.filter_by(patientID=patient_id).first()
@@ -458,17 +566,19 @@ def assignSelfCaregiver(patient_id):
 @main.route('/assignCaregiver')
 @login_required
 def assignCaregiver():
-    if current_user.get_info()['role'] != 'patient':
+    info = current_user.get_info()
+    if info['role'] != 'patient':
         flash('You need patient privileges!', "failure")
         return redirect(url_for('main.home'))
     caregiver = current_user.patients[0].caregiver
-    return render_template("assignCaregiver.html", user=current_user.get_info(), caregiver=caregiver)
+    return render_template("assignCaregiver.html", user=info, caregiver=caregiver)
 
 
 @main.route('/assignCaregiver', methods=['POST'])
 @login_required
 def assignCaregiver_post():
-    if current_user.get_info()['role'] != 'patient':
+    info = current_user.get_info()
+    if info['role'] != 'patient':
         flash('You need patient privileges!', "failure")
         return redirect(url_for('main.home'))
     caregiverID = request.form.get('caregiverID')
@@ -483,13 +593,14 @@ def assignCaregiver_post():
     flash(
         f"You have successfully assigned {caregiverName} as your caregiver", "success")
 
-    return render_template("assignCaregiver.html", user=current_user.get_info(), caregiver=patient.caregiver)
+    return render_template("assignCaregiver.html", user=info, caregiver=patient.caregiver)
 
 
 @main.route('/createPill', methods=['POST'])
 @login_required
 def createPill_post():
-    if current_user.get_info()['role'] != 'pharmacist':
+    info = current_user.get_info()
+    if info['role'] != 'pharmacist':
         return redirect(url_for('main.home'))
     pillName = request.form.get('pill-name')
     shape = request.form.get('pill-shape')
@@ -499,7 +610,7 @@ def createPill_post():
     pill = Pill(name=pillName, shape=shape, size=size, boxQuantity=qty)
     db.session.add(pill)
     db.session.commit()
-    return render_template("createPill.html", user=current_user.get_info())
+    return render_template("createPill.html", user=info)
 
 
 @main.route('/search_pill')
@@ -508,7 +619,7 @@ def search_pill():
     # Query the database for pills that match the name
     pills = Pill.query.filter(Pill.name.ilike(f'%{pill_name}%')).all()
     # Convert results to a list of dictionaries
-    result = [{'name': pill.name, 'id': pill.pillID, 'shape': pill.shape}
+    result = [{'name': pill.name, 'id': pill.pillID, 'shape': pill.shape, 'size': pill.size, 'boxQuantity': pill.boxQuantity}
               for pill in pills]
 
     return jsonify(result)
@@ -563,8 +674,11 @@ def search_pharmacy():
 
 def isCarer(patient_id):
     patient = Patient.query.filter_by(patientID=patient_id).first()
-    if patient.selfCarer == 1 and current_user.patients[0].patientID == patient_id:
-        return True
+    if patient.selfCarer == 1:
+        if current_user.patients and current_user.patients[0].patientID == patient_id:
+            return True
+        if current_user.patients:
+            return False
     carer = current_user.caregivers[0] if current_user.caregivers else current_user.pharmacies[0]
     if ((current_user.caregivers and patient.caregiverID == carer.caregiverID) or
             (current_user.pharmacies and carer.pharmacyID in [pharmacy.pharmacyID for pharmacy in patient.pharmacies])):

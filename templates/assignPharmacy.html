@@ -1,9 +1,52 @@
 {%extends "homeTemplate.html"%}
 {% block title %}Assing Pharmacy{% endblock %}
+
 {%block pageContent%}
 
-<div class="flex flex-col h-screen items-center justify-center h-48 mb-4 rounded-sm bg-gray-50 dark:bg-gray-800">
-    <h1 class="text-2xl font-bold text-gray-900 dark:text-white text-center mb-6">Choose Pharmacies</h1>
+<div
+    class="flex flex-col min-h-screen h-fit items-center justify-center h-48 mb-4 rounded-sm bg-gray-50 dark:bg-gray-800">
+
+
+    <h2 class="text-3xl font-bold text-gray-800 dark:text-white mb-6">Some Available Pharmacies</h2>
+    <div class="w-1/2 mb-6">
+        <!-- Search Input -->
+        <input type="text" id="pharmacySearch" placeholder="Search for a pharmacy..."
+            class="w-full p-2 rounded-md border dark:bg-gray-900 dark:text-white" oninput="fetchPharmacies()">
+    </div>
+
+    <div id="pharmacyGrid" class="grid grid-cols-1 md:grid-cols-3 gap-6 px-4 mb-12">
+        {% for pharmacy in pharmaciesList %}
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 text-center transform transition-all hover:scale-105 pharmacy-card"
+            data-name="{{ pharmacy.name }}">
+            <h5 class="text-xl font-semibold text-gray-900 dark:text-white">{{ pharmacy.name }}</h5>
+            <p class="text-gray-600 dark:text-gray-300 mt-2"><i class="fas fa-map-marker-alt"></i> {{ pharmacy.location
+                }}</p>
+            <p class="text-gray-600 dark:text-gray-300"><i class="fas fa-phone"></i> {{ pharmacy.phoneNb }}</p>
+
+            <!-- Icons Section -->
+            <div class="mt-4 flex justify-center space-x-4">
+                <!-- Message Icon -->
+                <button onclick="openMessageBox('{{ pharmacy.name }}', '{{pharmacy.userID}}')"
+                    class="p-2 bg-green-500 dark:bg-green-600 text-white rounded-md shadow-md hover:bg-green-600 dark:hover:bg-green-700 transition">
+                    <i class="fas fa-comment-alt"></i>
+                </button>
+                {%if user.role == 'patient'%}
+                <!-- Add Pharmacy (+) Icon -->
+                <form action="{{url_for('main.assignPharmacy')}}" method="POST">
+                    <input name="pharmacyID" id="pharmacyID" class="hidden" value="{{pharmacy.pharmacyID}}">
+                    <button type="submit"
+                        class="p-2  bg-blue-500 dark:bg-blue-600 text-white rounded-md shadow-md hover:bg-blue-600 dark:hover:bg-blue-700 transition">
+                        <i class="fas fa-plus"></i>
+                    </button>
+                </form>
+                {%endif%}
+
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- <h1 class="text-2xl font-bold text-gray-900 dark:text-white text-center mb-6">Search Pharmacies</h1>
     <form class="max-w-md mx-auto" action="{{ url_for('main.assignPharmacy') }}" method="POST">
         <div class="relative z-0 w-full mb-5 group">
             <input type="text" name="pharmacy-info" id="pharmacy-info"
@@ -14,9 +57,9 @@
                 Pharmacy name</label>
             <input name="pharmacyID" id="pharmacyID" class="hidden">
 
-        </div>
-        <!-- Search results container -->
-        <div id="search-results"
+        </div> -->
+    <!-- Search results container -->
+    <!-- <div id="search-results"
             class=" z-100 -mt-5 absolute w-1/8 bg-white border border-gray-300 rounded-lg shadow-lg z-10 hidden">
         </div>
         <div class="flex items-center justify-center">
@@ -27,11 +70,13 @@
         </div>
 
 
-    </form>
-    <div class="space-y-4 mt-10">
-        {% for pharmacy in pharmaciesList %}
+    </form> -->
+    {%if user.role == 'patient'%}
+    <h1 class="text-2xl mt-10 font-bold text-gray-900 dark:text-white text-center mb-6">Pharmacies You Chose</h1>
+    <div class="space-y-4 mt-2">
+        {% for pharmacy in patientPharmaciesList %}
         <div class="flex items-center justify-between bg-blue-500 text-white px-4 py-2 rounded-2xl shadow-md w-64 opacity-80 
-                        hover:bg-blue-600 hover:shadow-lg hover:scale-105 transition-transform duration-200">
+                            hover:bg-blue-600 hover:shadow-lg hover:scale-105 transition-transform duration-200">
             <span class="font-semibold">{{ pharmacy.name }}</span>
             <form action="{{url_for('main.unassignPharmacy')}}" method="POST">
                 <input class="hidden" type="hidden" name="pharmacy-ID" value={{pharmacy.pharmacyID}}>
@@ -46,14 +91,87 @@
         </div>
         {% endfor %}
     </div>
+    {%endif%}
+    <!-- Message Box Modal -->
+    <div id="messageBox" class="hidden fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+        <form action="{{url_for('main.messagePharmacy')}}" method="POST">
+            <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg w-96">
+                <h3 id="messageBoxTitle" class="text-lg font-bold text-gray-900 dark:text-white">Message</h3>
+                <textarea id="messageInput" name="message"
+                    class="w-full mt-3 p-2 border rounded-md dark:bg-gray-700 dark:text-white" rows="4"></textarea>
+                <input type='hidden' id="pharmacy-user-id" name="pharmacy-user-id">
+                <div class="mt-4 flex justify-between">
+                    <button type="button" onclick="closeMessageBox()"
+                        class="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600">Cancel</button>
+                    <button type="submit"
+                        class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">Send</button>
+                </div>
+            </div>
+        </form>
 
-
-
-
+    </div>
 
 </div>
-
 <script>
+    async function fetchPharmacies() {
+        let query = document.getElementById("pharmacySearch").value;
+
+        // Send an AJAX request to Flask
+        let response = await fetch(`/assignPharmacy?search=${query}`, {
+            headers: { "X-Requested-With": "XMLHttpRequest" }
+        });
+
+        let pharmacies = await response.json();
+
+        // Get the pharmacy grid container
+        let grid = document.getElementById("pharmacyGrid");
+        grid.innerHTML = ""; // Clear current pharmacies
+
+        // Loop through the pharmacies and add them
+        pharmacies.forEach(pharmacy => {
+            let pharmacyCard = `
+            <div class="pharmacy-card bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 text-center transform transition-all hover:scale-105">
+                <h5 class="text-xl font-semibold text-gray-900 dark:text-white">${pharmacy.name}</h5>
+                <p class="text-gray-600 dark:text-gray-300 mt-2"><i class="fas fa-map-marker-alt"></i> ${pharmacy.location}</p>
+                <p class="text-gray-600 dark:text-gray-300"><i class="fas fa-phone"></i> ${pharmacy.phoneNb}</p>
+    
+                <!-- Buttons -->
+                <div class="mt-4 flex justify-center space-x-4">
+                    <!-- Message Button -->
+                    <button onclick="openMessageBox('${pharmacy.name}')"
+                        class="p-2 bg-green-500 dark:bg-green-600 text-white rounded-md shadow-md hover:bg-green-600 dark:hover:bg-green-700 transition">
+                        <i class="fas fa-comment-alt"></i>
+                    </button>
+                    <!-- Add Button -->
+                    <form action="/assignPharmacy" method="POST">
+                        <input type="hidden" name="pharmacyID" value="${pharmacy.pharmacyID}">
+                        <button type="submit"
+                            class="p-2 bg-blue-500 dark:bg-blue-600 text-white rounded-md shadow-md hover:bg-blue-600 dark:hover:bg-blue-700 transition">
+                            <i class="fas fa-plus"></i>
+                        </button>
+                    </form>
+                </div>
+            </div>`;
+
+            grid.innerHTML += pharmacyCard;
+        });
+    }
+</script>
+<script>
+
+    function openMessageBox(pharmacyName, id) {
+        document.getElementById("messageBox").classList.remove("hidden");
+        document.getElementById("messageInput").value = `Hello. I would like to ask about:\n\nWhen you can, please reach me via:`;
+        document.getElementById("messageBoxTitle").innerText = `Message ${pharmacyName}`;
+        document.getElementById("pharmacy-user-id").value = id;
+    }
+
+    function closeMessageBox() {
+        document.getElementById("messageBox").classList.add("hidden");
+    }
+
+</script>
+<!-- <script>
     function searchpharmacy() {
         const pharmacyInput = document.getElementById('pharmacy-info').value;
 
@@ -69,7 +187,6 @@
                 const resultsContainer = document.getElementById('search-results');
                 resultsContainer.innerHTML = ''; // Clear previous results
                 resultsContainer.classList.remove('hidden'); // Show results container
-
                 if (data.length > 0) {
                     data.forEach(pharmacy => {
                         const pharmacyItem = document.createElement('div');
@@ -95,6 +212,6 @@
 
     // Attach event listener to input field
     document.getElementById('pharmacy-info').addEventListener('input', searchpharmacy);
-</script>
+</script> -->
 
 {%endblock%}

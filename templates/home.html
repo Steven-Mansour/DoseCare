@@ -2,7 +2,7 @@
 {% block title %}Home{% endblock %}
 
 {%block pageContent%}
-<div class="min-h-screen  h-fit">
+<div class="  h-fit">
     <div class="grid grid-cols-2 {%if user.role == 'patient'%} grid-cols-3 {%endif%} gap-4 mb-4">
         <div
             class="flex text-lg items-center justify-center h-24 p-4 rounded-sm bg-gray-50 dark:bg-gray-800 dark:text-white">
@@ -131,7 +131,7 @@
                     </td>
 
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
-                        {{ schedule.endDate }}
+                        {{ schedule.endDate.strftime('%d-%m-%Y') }}
                     </td>
                     <td class="px-6 py-4 font-semibold whitespace-nowrap text-sm 
                             {{ 'text-red-600' if days <= 3 else 'text-gray-500 dark:text-gray-300' }}">
