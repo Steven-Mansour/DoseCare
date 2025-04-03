@@ -492,13 +492,11 @@ class Patient(db.Model):
         return message
 
     def calculate_last_checkup(self):
-        # Get the list of schedules
-        schedules = self.pill_schedules
-        if schedules:
-            latest_start_date = max(
-                schedule.startDate for schedule in schedules)
+        lastCheckupDate = self.lastCheckupDate
+        if lastCheckupDate:
+            lastCheckupDate = lastCheckupDate.date()
             today = datetime.today().date()
-            delta_days = (today - latest_start_date).days + 300
+            delta_days = (today - lastCheckupDate).days
             # Convert days to months (approximately 30.44 days per month)
             months_difference = delta_days / 30.44
 

@@ -117,7 +117,9 @@ def index():
 
 @main.route('/hey')
 def hey():
-    return "hey"
+    patient = Patient.query.filter_by(patientID=2).first()
+    [valid, message] = patient.calculate_last_checkup()
+    return message
 
 
 @main.route('/home')
