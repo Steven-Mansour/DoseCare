@@ -309,6 +309,22 @@ def lowSupplySchedules():
     return render_template("lowSupplySchedules.html", user=user.get_stats(), schedules=schedules)
 
 
+@main.route('/updateCheckupDate', methods=['POST'])
+@login_required
+def updateCheckupDate():
+    patientID = int(request.form.get("patientID"))
+    info = current_user.get_info()
+    if (info['role'] == "patient" and info['patientID'] == patientID) or isCarer(patientID):
+        newDate = request.form.get("checkupDate")
+        patient = Patient.query.filter_by(patientID=patientID).first()
+        if patient:
+            patient.updateCheckupDate(newDate)
+            flash("Checkup date updated successfully", "success")
+            return redirect(url_for('main.schedule', patient_id=patientID))
+    flash("Failed to update checkup date", "failure")
+    return redirect(url_for('main.schedule', patient_id=patientID))
+
+
 @main.route('/schedule/<int:patient_id>')
 @login_required
 def schedule(patient_id):

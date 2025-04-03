@@ -197,6 +197,7 @@ class Patient(db.Model):
     selfCarer = db.Column(db.Boolean, nullable=False, default=False)
     raspberryPiId = db.Column(db.String(255), unique=True, nullable=True)
     emergencyContactNb = db.Column(db.String(15), nullable=False)
+    lastCheckupDate = db.Column(db.DateTime, nullable=True, default=None)
     caregiverID = db.Column(db.Integer, db.ForeignKey(
         'caregiver.caregiverID'), nullable=True)  # Foreign Key from CAREGIVER
     userID = db.Column(db.Integer, db.ForeignKey('user.userID'),
@@ -207,6 +208,11 @@ class Patient(db.Model):
     user = db.relationship('User', backref='patients', lazy=True)
     pharmacies = db.relationship(
         'Pharmacy', secondary=patient_pharmacy, back_populates='patients')
+
+    def updateCheckupDate(self, date):
+        self.lastCheckupDate = date
+        db.session.commit()
+        return
 
     def get_ending_schedules(self, list):
         now = datetime.now().date()
@@ -508,7 +514,7 @@ class Patient(db.Model):
                         str += f"and "
                 if extra_months > 0:
                     str += f"{extra_months} month(s) "
-                str += "ago.\nWe recommend you see your doctor soon."
+                str += "ago.\nWe recommend seeing the doctor soon."
                 return ["invalid", str]
 
         return ["valid", f"The last checkup is within the last 6 months."]
