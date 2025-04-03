@@ -16,10 +16,24 @@
 </button>
 
 <aside id="default-sidebar"
-    class="absolute top-20 overflow-y-hidden  left-0  w-64 h-screen sm:h-auto transition-transform -translate-x-full sm:translate-x-0"
+    class="absolute top-18 z-40 overflow-y-hidden  left-0  w-64 h-screen sm:h-auto transition-transform -translate-x-full sm:translate-x-0"
     aria-label="Sidebar">
-    <div class="h-full px-3 py-4 overflow-y-auto  bg-gray-50 dark:bg-gray-900">
+    <div class="h-full z-40 px-3 py-4 overflow-y-auto  bg-gray-50 dark:bg-gray-900">
         <ul class="space-y-2 font-medium">
+
+            <li>
+                <!-- Add this inside your sidebar content, at the top, for example: -->
+                <button id="back-button" data-drawer-toggle="default-sidebar" type="button"
+                    class=" sm:hidden inline-flex items-center p-2 mb-4 text-gray-500 rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-200 dark:text-gray-400 dark:hover:bg-gray-700 dark:focus:ring-gray-600">
+                    <span class="sr-only">Close sidebar</span>
+                    <!-- Back Icon (for example, a left arrow) -->
+                    <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                        <path fill-rule="evenodd"
+                            d="M10.707 15.707a1 1 0 01-1.414 0L3.586 10l5.707-5.707a1 1 0 011.414 1.414L6.414 10l4.293 4.293a1 1 0 010 1.414z"
+                            clip-rule="evenodd" />
+                    </svg>
+                </button>
+            </li>
             <li>
                 <a href="{{url_for('notification.get_notifications', user_id = user.userID)}}"
                     class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
@@ -35,20 +49,6 @@
                         user.notifications }}</span>
 
                 </a>
-            </li>
-
-            <li>
-                <!-- Add this inside your sidebar content, at the top, for example: -->
-                <button id="back-button" data-drawer-toggle="default-sidebar" type="button"
-                    class=" sm:hidden inline-flex items-center p-2 mb-4 text-gray-500 rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-200 dark:text-gray-400 dark:hover:bg-gray-700 dark:focus:ring-gray-600">
-                    <span class="sr-only">Close sidebar</span>
-                    <!-- Back Icon (for example, a left arrow) -->
-                    <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                        <path fill-rule="evenodd"
-                            d="M10.707 15.707a1 1 0 01-1.414 0L3.586 10l5.707-5.707a1 1 0 011.414 1.414L6.414 10l4.293 4.293a1 1 0 010 1.414z"
-                            clip-rule="evenodd" />
-                    </svg>
-                </button>
             </li>
             <li>
                 <a href="{{ url_for('main.home') }}"
@@ -404,6 +404,7 @@
                         // This adds the class that shifts the sidebar off-screen.
                         // Adjust the classes as needed if you have a different mechanism.
                         sidebar.classList.add('-translate-x-full');
+
                     });
                 </script>
                 <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
