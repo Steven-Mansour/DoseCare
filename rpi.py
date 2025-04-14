@@ -3,6 +3,7 @@ import asyncio
 from models import User, Pill, Caregiver, Patient, PillSchedule, ScheduleProperty
 from infrastructure import socketio
 from notifications import create_notification
+
 rpi = Blueprint('rpi', __name__)
 
 

@@ -227,6 +227,14 @@ class Patient(db.Model):
         db.session.commit()
         return
 
+    def assign_self_carer(patient_id, isCarer):
+        patient = Patient.query.filter_by(patientID=patient_id).first()
+        patient.selfCarer = isCarer
+        db.session.commit()
+        if patient.selfCarer == 1:
+            return ["You can now manage your schedules", f"{patient.firstName} {patient.lastName} is now managing their own schedules"]
+        return ["You no longer have caregiver privileges", f"{patient.firstName} {patient.lastName} is no longer managing their own schedules"]
+
     def get_ending_schedules(self, list):
         now = datetime.now().date()
 

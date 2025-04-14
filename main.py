@@ -584,13 +584,10 @@ def assignSelfCaregiver(patient_id):
     if info['patientID'] != patient_id:
         flash("You are not allowed to change another patient's data!", "failure")
         return redirect(url_for('main.home'))
-    patient = Patient.query.filter_by(patientID=patient_id).first()
-    patient.selfCarer = bool(request.form.get('self_caregiver'))
-    db.session.commit()
-    if patient.selfCarer == 1:
-        flash("You can now manage your schedules", "success")
-    elif patient.selfCarer == 0:
-        flash("You no longer have caregiver privileges", "success")
+    [message, notification] = Patient.assign_self_carer(
+        patient_id, bool(request.form.get('self_caregiver')))
+    create_notification(current_user.userID, notification)
+    flash(message, "success")
     return redirect(url_for('main.assignCaregiver'))
 
 
