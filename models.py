@@ -291,7 +291,8 @@ class Patient(db.Model):
                             qty = qty - prop.dose
 
             current_date += timedelta(days=1)
-            while (qty > 0):
+            MAX_DAYS_LOOKAHEAD = 365
+            while (qty > 0 and daysLeft < MAX_DAYS_LOOKAHEAD):
                 date_difference = current_date.date() - start_date
                 days_difference = date_difference.days
                 if days[days_difference % frequency] == 1:

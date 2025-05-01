@@ -157,8 +157,8 @@
                         <option value="14">2 Weeks (14 Days)</option>
                         <option value="30">1 Month (30 Days)</option>
                     </select>
-                    <input id="extendDaysInput" name="extendDaysInput" type="number" min="0" placeholder="Enter days"
-                        class="w-2/5 p-2 border rounded-md dark:bg-gray-700 dark:text-white"
+                    <input id="extendDaysInput" name="extendDaysInput" type="number" min="0" value="0" required
+                        placeholder="Enter days" class="w-2/5 p-2 border rounded-md dark:bg-gray-700 dark:text-white"
                         oninput="syncExtendDaysSelect()">
                 </div>
             </div>
@@ -167,7 +167,7 @@
             <div class="mb-4">
                 <label class="block text-gray-700 dark:text-gray-300 font-medium">Refill Container (Pills)</label>
                 <input id="refillAmount" name="refillAmount" type="number" min="0" placeholder="Enter refill amount"
-                    value="10" class="w-full p-2 border rounded-md dark:bg-gray-700 dark:text-white">
+                    required value="10" class="w-full p-2 border rounded-md dark:bg-gray-700 dark:text-white">
             </div>
             <input id="scheduleID" name="scheduleID" type="number" class="hidden">
 

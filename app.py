@@ -55,7 +55,7 @@ def create_app():
                       trigger='cron',
                       day=1,  # Runs on the 1st day of each month
                       hour=0,  # At midnight (00:00)
-                      minute=0)  # Runs every 5 seconds
+                      minute=0)
 
     if __name__ == '__main__':
         socketio.run(app, debug=True, host="0.0.0.0", port=5000)
