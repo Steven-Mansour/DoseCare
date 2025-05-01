@@ -373,14 +373,13 @@ def editSchedule(schedule_id):
         flash("Schedule does not exist")
     return redirect(url_for('main.home'))
 
-
+#This route renders the HTML form that allows a caregiver to create a pill schedule for a specific patient.
 @main.route('/createSchedule/<int:patient_id>')
 @login_required
 def createSchedule(patient_id):
     if not isCarer(patient_id):
         flash("You are not allowed to access this route")
         return redirect(url_for('main.home'))
-    patient_id = patient_id
     patient = Patient.query.filter_by(patientID=patient_id).first()
     unusedCont = patient.get_unused_container()
     if unusedCont == -1:
@@ -388,13 +387,13 @@ def createSchedule(patient_id):
         return redirect(url_for('main.home'))
     return render_template('createSchedule.html', user=current_user.get_info(), patient_id=patient_id)
 
-
+#This route handles the form submission and saves the schedule and its details to the database.
 @main.route('/createSchedule/<int:patient_id>', methods=['POST'])
 @login_required
 def createSchedule_post(patient_id):
     if not isCarer(patient_id):
         flash("You are not allowed to access this route", "failure")
-        return redirect(url_for('maini.home'))
+        return redirect(url_for('main.home'))
     schedule = PillSchedule()
     patient = Patient.query.get_or_404(patient_id)
     pillID = request.form.get('pill_id')
