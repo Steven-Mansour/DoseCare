@@ -395,7 +395,7 @@ def createSchedule_post(patient_id):
         flash("You are not allowed to access this route", "failure")
         return redirect(url_for('main.home'))
     schedule = PillSchedule()
-    patient = Patient.query.get_or_404(patient_id)
+    patient =  Patient.query.filter_by(patientID=patient_id).first()
     pillID = request.form.get('pill_id')
     frequency = request.form.get('frequency')
     selected_days = [0] * int(frequency)
