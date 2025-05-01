@@ -394,15 +394,19 @@ def createSchedule_post(patient_id):
     if not isCarer(patient_id):
         flash("You are not allowed to access this route", "failure")
         return redirect(url_for('main.home'))
-    schedule = PillSchedule()
+
     patient =  Patient.query.filter_by(patientID=patient_id).first()
-    pillID = request.form.get('pill_id')
-    frequency = request.form.get('frequency')
-    selected_days = [0] * int(frequency)
     containerNb = patient.get_unused_container()
     if containerNb == -1:
         flash("You cannot create more schedules, make sure to delete one before you proceed", "failure")
         return redirect(url_for('main.createSchedule'))
+
+    
+    schedule = PillSchedule()
+    pillID = request.form.get('pill_id')
+    frequency = request.form.get('frequency')
+    selected_days = [0] * int(frequency)
+
     # Loop through each checkbox and update the corresponding index to 1 if checked
     for i in range(int(frequency)):
         if f"day_{i}" in request.form:  # If the checkbox for that day is checked
