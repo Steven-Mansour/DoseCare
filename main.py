@@ -9,6 +9,9 @@ from notifications import create_notification
 
 main = Blueprint('main', __name__)
 
+# This route is called when a calendar popup is opened for a specific patient — for example, when viewing what pills are scheduled on a specific day.
+# It returns the pill schedule for that day in JSON format.
+
 
 @main.route('/popup-opened/<int:patient_id>')
 @login_required
@@ -33,6 +36,8 @@ def about():
 @login_required
 def privacyPolicy():
     return render_template("privacy.html", user=current_user.get_info())
+
+# This route is used to update the Raspberry Pi ID assigned to a patient — typically when linking a new or replaced device.
 
 
 @main.route('/updateRpiID', methods=["POST"])
@@ -89,6 +94,9 @@ def updateProfile():
         flash("Failed to upload profile. Try again later", "failure")
     return redirect(url_for('main.profile', user_id=user.userID))
 
+# This route displays the dispenser settings page for a patient or caregiver.
+# It shows whether each patient's Raspberry Pi is connected and allows the user to view/update dispenser settings.
+
 
 @main.route('/dispenser')
 @login_required
@@ -128,6 +136,8 @@ def dispenser():
 
     return render_template('dispenser.html', list=patient_list, user=current_user.get_info())
 
+# This route is used to extend an existing pill schedule — for example, when the caregiver or patient adds more pills or continues the treatment for more days.
+
 
 @main.route('/extendSchedule', methods=["POST"])
 @login_required
@@ -147,7 +157,6 @@ def extendSchedule():
         send_json_to_pi(pi_id)
     flash("Schedule has been updated successfully", "success")
     return redirect(url_for('main.schedule', patient_id=patientID))
-    # return f"{scheduleID} has been updated into {daysExtended} days and {pillsAdded} pills"
 
 
 @main.route('/')
@@ -175,6 +184,8 @@ def profile(user_id):
     # user = User.query.filter_by(userID=user_id).first()
     user = current_user
     return render_template("profile.html", user=user.get_info())
+
+# This route allows patients or caregivers to view and search for pharmacies, and assign a pharmacy to a patient.
 
 
 @main.route('/assignPharmacy')
@@ -213,6 +224,8 @@ def assignPharmacy():
                            patientPharmaciesList=patientPharmacies,
                            pharmaciesList=pharmacies)
 
+# This route allows a logged-in patient or caregiver to send a custom message to a pharmacy, typically from the assign pharmacy page.
+
 
 @main.route('/messagePharmacy', methods=['POST'])
 @login_required
@@ -226,6 +239,8 @@ def messagePharmacy():
         return redirect(url_for('main.assignPharmacy'))
     flash("Error: please login to try again", "failure")
     return redirect(url_for('main.assignPharmacy'))
+
+# This route allows a patient to select and assign a pharmacy to themselves — effectively linking their profile with the selected pharmacy.
 
 
 @main.route('/assignPharmacy', methods=['POST'])
@@ -250,6 +265,8 @@ def assignPharmacyPost():
             flash("Pharmacy does not exist!", "failure")
     return redirect(url_for('main.assignPharmacy'))
 
+# This route allows a patient to unassign a pharmacy
+
 
 @main.route('/unassignPharmacy', methods=['POST'])
 @login_required
@@ -272,6 +289,8 @@ def unassignPharmacy():
         flash("Pharmacy has been successfully removed", "success")
         return redirect(url_for('main.assignPharmacy'))
 
+# This route is used by a patient to view their next scheduled pill dose
+
 
 @main.route('/getNextDose/<int:patient_id>')
 @login_required
@@ -281,6 +300,10 @@ def getNextDose(patient_id):
         return redirect(url_for('main.home'))
     patient = Patient.query.filter_by(patientID=patient_id).first()
     return f"{patient.get_next_dose()}"
+
+# This route displays the interactive medication calendar for a specific patient —
+# showing what pills are scheduled each day in a calendar view.
+# It is role-restricted to the assigned caregiver, the patient, or an associated pharmacy.
 
 
 @main.route('/viewCalendar/<int:patient_id>')
@@ -305,6 +328,9 @@ def viewCalendar(patient_id):
                            daily_pills=monthlySched["daily_pills"],
                            current_day=monthlySched["current_day"], patient=patient)
 
+# This route is used to delete an existing pill schedule, including its associated time-dose entries (schedule properties).
+# Only an authorized caregiver can perform this action.
+
 
 @main.route('/deleteSchedule/<int:schedule_id>', methods=['POST'])
 @login_required
@@ -327,6 +353,9 @@ def deleteSchedule(schedule_id):
         send_json_to_pi(pi_id)
     return redirect(url_for('main.schedule', patient_id=patient.patientID))
 
+# This route displays a list of patients with pill schedules that are expiring soon —
+# intended for caregivers and pharmacists to monitor and take action (e.g. refill or extend).
+
 
 @main.route('/expiringSchedules')
 @login_required
@@ -337,6 +366,9 @@ def expiringSchedules():
     carer = current_user.caregivers[0] if current_user.caregivers else current_user.pharmacies[0]
     schedules = carer.get_patients_ending_schedule(2147483647)
     return render_template("expiringSchedules.html", user=current_user.get_stats(), schedules=schedules)
+
+# This route displays a list of schedules with low remaining pill supply, helping caregivers or pharmacists
+# detect when a refill may be needed before the treatment is interrupted.
 
 
 @main.route('/lowSupplySchedules')
@@ -349,6 +381,9 @@ def lowSupplySchedules():
     carer = current_user.caregivers[0] if current_user.caregivers else current_user.pharmacies[0]
     schedules = carer.get_lowest_pills_schedule(2147483647)
     return render_template("lowSupplySchedules.html", user=user.get_stats(), schedules=schedules)
+
+# This route allows a patient or their caregiver to update the date of the patient’s last medical checkup.
+# It's used to keep the patient's health records up to date.
 
 
 @main.route('/updateCheckupDate', methods=['POST'])
@@ -365,6 +400,9 @@ def updateCheckupDate():
             return redirect(url_for('main.schedule', patient_id=patientID))
     flash("Failed to update checkup date", "failure")
     return redirect(url_for('main.schedule', patient_id=patientID))
+
+# This route displays the pill schedules for a specific patient, and provides information needed to create new ones.
+# It’s only accessible to the assigned caregiver.
 
 
 @main.route('/schedule/<int:patient_id>')
@@ -387,6 +425,9 @@ def schedule(patient_id):
     else:
         flash("Patient does not exist")
     return redirect(url_for('main.home'))
+
+# This route is used to load the form for editing an existing pill schedule.
+# Only the authorized caregiver of the patient can access it.
 
 
 @main.route('/editSchedule/<int:schedule_id>')
@@ -413,6 +454,8 @@ def editSchedule(schedule_id):
         flash("Schedule does not exist")
     return redirect(url_for('main.home'))
 
+# This route renders the HTML form that allows a caregiver to create a pill schedule for a specific patient.
+
 
 @main.route('/createSchedule/<int:patient_id>')
 @login_required
@@ -420,13 +463,14 @@ def createSchedule(patient_id):
     if not isCarer(patient_id):
         flash("You are not allowed to access this route")
         return redirect(url_for('main.home'))
-    patient_id = patient_id
     patient = Patient.query.filter_by(patientID=patient_id).first()
     unusedCont = patient.get_unused_container()
     if unusedCont == -1:
         flash("You need to delete a schedule before creating a new one.", "failure")
         return redirect(url_for('main.home'))
     return render_template('createSchedule.html', user=current_user.get_info(), patient_id=patient_id)
+
+# This route handles the form submission and saves the schedule and its details to the database.
 
 
 @main.route('/createSchedule/<int:patient_id>', methods=['POST'])
@@ -435,15 +479,18 @@ def createSchedule_post(patient_id):
     if not isCarer(patient_id):
         flash("You are not allowed to access this route", "failure")
         return redirect(url_for('main.home'))
-    schedule = PillSchedule()
-    patient = Patient.query.get_or_404(patient_id)
-    pillID = request.form.get('pill_id')
-    frequency = request.form.get('frequency')
-    selected_days = [0] * int(frequency)
+
+    patient = Patient.query.filter_by(patientID=patient_id).first()
     containerNb = patient.get_unused_container()
     if containerNb == -1:
         flash("You cannot create more schedules, make sure to delete one before you proceed", "failure")
         return redirect(url_for('main.createSchedule'))
+
+    schedule = PillSchedule()
+    pillID = request.form.get('pill_id')
+    frequency = request.form.get('frequency')
+    selected_days = [0] * int(frequency)
+
     # Loop through each checkbox and update the corresponding index to 1 if checked
     for i in range(int(frequency)):
         if f"day_{i}" in request.form:  # If the checkbox for that day is checked
@@ -480,6 +527,8 @@ def createSchedule_post(patient_id):
         '{schedule.pill.shape[0].capitalize()}{schedule.pill.size}' in container {schedule.containerNb}""", "success")
 
     return redirect(url_for('main.schedule', patient_id=patient_id))
+
+# This route is used to submit and save changes to an existing pill schedule
 
 
 @main.route('/editSchedule/<int:schedule_id>', methods=['POST'])
@@ -541,6 +590,8 @@ def editSchedule_post(schedule_id):
     flash('The schedule has been updated successfully', "success")
     return redirect(url_for('main.schedule', patient_id=patient.patientID))
 
+# This route displays the "Create Pill" page, which allows pharmacists to define and register new pill types in the system
+
 
 @main.route('/createPill')
 @login_required
@@ -550,6 +601,9 @@ def createPill():
         flash("This page requires pharmacist priveleges", "failure")
         return redirect(url_for('main.home'))
     return render_template("createPill.html", user=info)
+
+# This route displays a list of patients assigned to the currently logged-in caregiver or pharmacist.
+# It helps them manage and monitor patient profiles.
 
 
 @main.route('/viewPatients')
@@ -564,6 +618,8 @@ def viewPatients():
     ]
     carer = current_user.caregivers[0] if current_user.caregivers else current_user.pharmacies[0]
     return render_template("viewPatients.html", user=info, patients=carer.patients)
+
+# This route allows a patient to remove their currently assigned caregiver from their profile.
 
 
 @main.route('/removeCaregiver/<int:patient_id>', methods=['POST'])
@@ -582,6 +638,8 @@ def removeCaregiver(patient_id):
     flash("Successfully removed caregiver", "success")
     return redirect(url_for('main.assignCaregiver'))
 
+# This route allows a patient to assign or unassign themselves as their own caregiver
+
 
 @main.route('/assignSelfCaregiver/<int:patient_id>', methods=['POST'])
 @login_required
@@ -599,6 +657,8 @@ def assignSelfCaregiver(patient_id):
     flash(message, "success")
     return redirect(url_for('main.assignCaregiver'))
 
+# This route displays the caregiver assignment page for a patient
+
 
 @main.route('/assignCaregiver')
 @login_required
@@ -609,6 +669,8 @@ def assignCaregiver():
         return redirect(url_for('main.home'))
     caregiver = current_user.patients[0].caregiver
     return render_template("assignCaregiver.html", user=info, caregiver=caregiver)
+
+# This route allows a patient to assign a caregiver to themselves by submitting a form with the caregiver’s ID.
 
 
 @main.route('/assignCaregiver', methods=['POST'])
@@ -632,6 +694,9 @@ def assignCaregiver_post():
 
     return render_template("assignCaregiver.html", user=info, caregiver=patient.caregiver)
 
+# This route processes the form submission to create a new pill.
+# It’s used by pharmacists to add pills into the system’s database.
+
 
 @main.route('/createPill', methods=['POST'])
 @login_required
@@ -649,6 +714,9 @@ def createPill_post():
     db.session.commit()
     return render_template("createPill.html", user=info)
 
+# This route performs a real-time search for pills by name and returns matching results in JSON format —
+# often used for autocomplete or dropdowns in forms.
+
 
 @main.route('/search_pill')
 def search_pill():
@@ -660,6 +728,9 @@ def search_pill():
               for pill in pills]
 
     return jsonify(result)
+
+# This route allows a patient to search for caregivers by name,
+# typically used in an autocomplete field when assigning a caregiver.
 
 
 @main.route('/search_caregiver')
@@ -685,6 +756,8 @@ def search_caregiver():
 
     return jsonify(result)
 
+# This route enables logged-in users (typically patients or caregivers) to search for pharmacies by name
+
 
 @main.route('/search_pharmacy')
 @login_required
@@ -707,6 +780,9 @@ def search_pharmacy():
     } for pharmacy in pharmacies]
 
     return jsonify(result)
+
+# Determines whether the currently logged-in user has permission to manage a specific patient’s data —
+# either as a self-managing patient, assigned caregiver, or linked pharmacy.
 
 
 def isCarer(patient_id):
