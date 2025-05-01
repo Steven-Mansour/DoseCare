@@ -1,249 +1,120 @@
+
 from app import db, create_app
-from models import User, Patient, Caregiver, Pharmacy, PillSchedule, Pill, ScheduleProperty
+from models import User, Patient, Caregiver, Pharmacy, PillSchedule, Pill, ScheduleProperty, Notification, patient_pharmacy
 from flask import Flask
 
-
 with create_app().app_context():
-
     # Create Users
-    user1 = User(email='john.doe@example.com')
-    user1.set_password('hashedpassword1')  # Hash the password before storing
-
-    user2 = User(email='jane.smith@example.com')
-    user2.set_password('hashedpassword2')  # Hash the password before storing
-
-    user3 = User(email='steven.mansour@lau.edu')
-    user3.set_password('steven')  # Hash the password before storing
-
-    user4 = User(email='steven@lau')  # patient
-    user4.set_password('123')  # Hash the password before storing
-
-    user5 = User(email='hillary@lau')  # careviger
-    user5.set_password('123')  # Hash the password before storing
-
-    user6 = User(email='mj@lau')  # pharmacist
-    user6.set_password('123')  # Hash the password before storing
-
-    user7 = User(email='toni@lau')  # patient
-    user7.set_password('123')
-
-    user8 = User(email='anthony@lau')  # patient
-    user8.set_password('123')
-
-    user9 = User(email='elissa@lau')  # patient
-    user9.set_password('123')
-
-    user10 = User(email='hanadi@lau')  # patient
-    user10.set_password('123')
-
-    user11 = User(email='ryan@lau')  # patient
-    user11.set_password('123')
-
-    user12 = User(email='ely@lau')  # patient
-    user12.set_password('123')
-
-    user13 = User(email='christa@lau')  # patient
-    user13.set_password('123')
-
-    user14 = User(email='erica@lau')  # patient
-    user14.set_password('123')
-
-    db.session.add_all([user1, user2, user3, user4, user5, user6,
-                       user7, user8, user9, user10, user11, user12, user13, user14])
+    users_data = [
+        ('john.doe@example.com', 'hashedpassword1'),  # caregiver
+        ('jane.smith@example.com', 'hashedpassword2'),  # patient
+        ('steven.mansour@lau.edu', 'steven'),  # pharmacist
+        ('steven@lau', '123'),  # patient
+        ('hillarytannous@gmail.com', '123'),  # caregiver
+        ('mj@lau', '123'),  # pharmacist
+        ('toni@lau', '123'),  # patient
+        ('anthony@lau', '123'),  # patient
+        ('elissa@lau', '123'),  # patient
+        ('hanadi@lau', '123'),  # patient
+        ('ryan@lau', '123'),  # patient
+        ('ely@lau', '123'),  # patient
+        ('christa@lau', '123'),  # patient
+        ('erica@lau', '123'),  # patient
+    ]
+    users = []
+    for email, pwd in users_data:
+        user = User(email=email)
+        user.set_password(pwd)
+        users.append(user)
+    db.session.add_all(users)
     db.session.commit()
 
     # Create Caregivers
-    caregiver1 = Caregiver(
-        firstName='Michael', lastName='Brown', phoneNb='123456789', userID=user1.userID)
-
-    caregiver2 = Caregiver(
-        firstName='Hillary', lastName='Tannous', phoneNb='123123', userID=user5.userID
-    )
-
+    caregiver1 = Caregiver(firstName='Michael', lastName='Brown',
+                           phoneNb='123456789', userID=users[0].userID)
+    caregiver2 = Caregiver(firstName='Hillary', lastName='Tannous',
+                           phoneNb='123123', userID=users[4].userID)
     db.session.add_all([caregiver1, caregiver2])
     db.session.commit()
 
     # Create Patients
-    patient1 = Patient(firstName='Alice', lastName='Johnson', emergencyContactNb='987654321',
-                       caregiverID=caregiver1.caregiverID, userID=user2.userID)
-
-    patient2 = Patient(firstName='Steven', lastName='Mansour', emergencyContactNb='71487515',
-                       caregiverID=caregiver2.caregiverID, userID=user4.userID)
-
-    patient3 = Patient(firstName='Toni', lastName='Tannous', emergencyContactNb='71549862',
-                       caregiverID=caregiver2.caregiverID, userID=user7.userID)
-
-    patient4 = Patient(firstName='Anthony', lastName='Tannous', emergencyContactNb='70321456',
-                       caregiverID=caregiver2.caregiverID, userID=user8.userID)
-
-    patient5 = Patient(firstName='Elissa', lastName='Tannous', emergencyContactNb='71985632',
-                       caregiverID=caregiver2.caregiverID, userID=user9.userID)
-
-    patient6 = Patient(firstName='Hanadi', lastName='Mansour', emergencyContactNb='70235489',
-                       caregiverID=caregiver2.caregiverID, userID=user10.userID)
-
-    patient7 = Patient(firstName='Ryan', lastName='Ibrahim', emergencyContactNb='71487615',
-                       caregiverID=caregiver2.caregiverID, userID=user11.userID)
-
-    patient8 = Patient(firstName='Ely', lastName='Ibrahim', emergencyContactNb='71687515',
-                       caregiverID=caregiver2.caregiverID, userID=user12.userID)
-
-    patient9 = Patient(firstName='Christa', lastName='Elias', emergencyContactNb='81467515',
-                       caregiverID=caregiver2.caregiverID, userID=user13.userID)
-
-    patient10 = Patient(firstName='Erica', lastName='Elias', emergencyContactNb='81487515',
-                        caregiverID=caregiver2.caregiverID, userID=user14.userID)
-
-    db.session.add_all([patient1, patient2, patient3, patient4,
-                       patient5, patient6, patient7, patient8, patient9, patient10])
+    patient_info = [
+        ('Alice', 'Johnson', '987654321', caregiver1, users[1]),
+        ('Steven', 'Mansour', '71487515', caregiver2, users[3]),
+        ('Toni', 'Tannous', '71549862', caregiver2, users[6]),
+        ('Anthony', 'Tannous', '70321456', caregiver2, users[7]),
+        ('Elissa', 'Tannous', '71985632', caregiver2, users[8]),
+        ('Hanadi', 'Mansour', '70235489', caregiver2, users[9]),
+        ('Ryan', 'Ibrahim', '71487615', caregiver2, users[10]),
+        ('Ely', 'Ibrahim', '71687515', caregiver2, users[11]),
+        ('Christa', 'Elias', '81467515', caregiver2, users[12]),
+        ('Erica', 'Elias', '81487515', caregiver2, users[13]),
+    ]
+    patients = [
+        Patient(firstName=f, lastName=l, emergencyContactNb=phone,
+                caregiverID=cg.caregiverID, userID=u.userID)
+        for f, l, phone, cg, u in patient_info
+    ]
+    db.session.add_all(patients)
     db.session.commit()
 
-    # Create Pharmacy
-    pharmacy1 = Pharmacy(name='Health Pharmacy',
-                         location='123 Main St', phoneNb='5551234', userID=user3.userID)
-
-    pharmacy2 = Pharmacy(name='Tannous Pharmacy',
-                         location='Kfaraabida', phoneNb='10000', userID=user6.userID)
-
+    # Create Pharmacies
+    pharmacy1 = Pharmacy(name='Health Pharmacy', location='123 Main St',
+                         phoneNb='5551234', userID=users[2].userID)
+    pharmacy2 = Pharmacy(name='Tannous Pharmacy', location='Kfaraabida',
+                         phoneNb='10000', userID=users[5].userID)
     db.session.add_all([pharmacy1, pharmacy2])
     db.session.commit()
 
-    patient1.pharmacies.append(pharmacy1)
-    patient1.pharmacies.append(pharmacy2)
-    patient2.pharmacies.append(pharmacy1)
-    patient3.pharmacies.append(pharmacy2)
-
+    # Link Patients with Pharmacies
+    patients[0].pharmacies.extend([pharmacy1, pharmacy2])
+    patients[1].pharmacies.append(pharmacy1)
+    patients[2].pharmacies.append(pharmacy2)
     db.session.commit()
 
     # Create Pills
-    pill1 = Pill(name='Paracetamol', shape='Round', size=1, boxQuantity=10)
-    pill2 = Pill(name='Ibuprofen', shape='Oval', size=2, boxQuantity=20)
-    pill3 = Pill(name='Aspirin', shape='Round', size=1, boxQuantity=15)
-    pill4 = Pill(name='Metformin', shape='Capsule', size=3, boxQuantity=30)
-    pill5 = Pill(name='Lisinopril', shape='Oval', size=2, boxQuantity=25)
-    pill6 = Pill(name='Amoxicillin', shape='Capsule', size=3, boxQuantity=21)
-    pill7 = Pill(name='Atorvastatin', shape='Oval', size=2, boxQuantity=28)
-    pill8 = Pill(name='Omeprazole', shape='Capsule', size=3, boxQuantity=14)
-    pill9 = Pill(name='Cetirizine', shape='Round', size=1, boxQuantity=10)
-    pill10 = Pill(name='Vitamin C', shape='Chewable', size=2, boxQuantity=50)
-
-    # Add all pills to the session
-    db.session.add_all([pill1, pill2, pill3, pill4, pill5,
-                       pill6, pill7, pill8, pill9, pill10])
-
-    # Commit the changes
-    db.session.commit()
-
-    # Create Pill Schedule
-    schedule1 = PillSchedule(day=[1, 1, 0], frequency=3, startDate='2025-01-01', endDate='2025-02-01', remainingQty=30, expiryDate='2025-12-31',
-                             containerNb=1, patientID=patient1.patientID, caregiverID=caregiver1.caregiverID, pharmacyID=pharmacy1.pharmacyID, pillID=pill1.pillID)
-
-    schedule2 = PillSchedule(day=[1, 0, 1], frequency=3, startDate='2025-01-01', endDate='2025-02-01', remainingQty=30, expiryDate='2025-12-31',
-                             containerNb=1, patientID=patient2.patientID, caregiverID=caregiver2.caregiverID, pharmacyID=pharmacy2.pharmacyID, pillID=pill1.pillID)
-
-    schedule3 = PillSchedule(day=[1, 0], frequency=2, startDate='2025-01-01', endDate='2025-03-01', remainingQty=40, expiryDate='2025-11-30',
-                             containerNb=2, patientID=patient3.patientID, caregiverID=caregiver2.caregiverID, pharmacyID=pharmacy2.pharmacyID, pillID=pill1.pillID)
-
-    schedule4 = PillSchedule(day=[1, 0, 0, 0], frequency=4, startDate='2025-01-10', endDate='2025-03-10', remainingQty=60, expiryDate='2025-10-15',
-                             containerNb=3, patientID=patient4.patientID, caregiverID=caregiver2.caregiverID, pharmacyID=pharmacy2.pharmacyID, pillID=pill1.pillID)
-
-    schedule5 = PillSchedule(day=[1, 1, 1, 0, 0, 0], frequency=6, startDate='2025-01-05', endDate='2025-04-05', remainingQty=30, expiryDate='2025-09-20',
-                             containerNb=2, patientID=patient5.patientID, caregiverID=caregiver2.caregiverID, pharmacyID=pharmacy2.pharmacyID, pillID=pill1.pillID)
-
-    schedule6 = PillSchedule(day=[0, 1, 1, 0, 1, 0, 1], frequency=7, startDate='2025-01-15', endDate='2025-04-15', remainingQty=50, expiryDate='2025-08-31',
-                             containerNb=3, patientID=patient6.patientID, caregiverID=caregiver2.caregiverID, pharmacyID=pharmacy2.pharmacyID, pillID=pill1.pillID)
-
-    schedule7 = PillSchedule(day=[1, 0, 0, 1, 0, 1, 1], frequency=7, startDate='2025-01-01', endDate='2025-05-01', remainingQty=90, expiryDate='2025-12-15',
-                             containerNb=2, patientID=patient7.patientID, caregiverID=caregiver2.caregiverID, pharmacyID=pharmacy2.pharmacyID, pillID=pill1.pillID)
-
-    schedule8 = PillSchedule(day=[0, 1, 0, 1, 1], frequency=5, startDate='2025-01-10', endDate='2025-05-10', remainingQty=70, expiryDate='2025-11-01',
-                             containerNb=3, patientID=patient8.patientID, caregiverID=caregiver2.caregiverID, pharmacyID=pharmacy2.pharmacyID, pillID=pill1.pillID)
-
-    schedule9 = PillSchedule(day=[1, 1, 1, 0], frequency=4, startDate='2025-01-01', endDate='2025-06-01', remainingQty=45, expiryDate='2025-10-10',
-                             containerNb=1, patientID=patient9.patientID, caregiverID=caregiver2.caregiverID, pharmacyID=pharmacy2.pharmacyID, pillID=pill1.pillID)
-
-    schedule10 = PillSchedule(day=[0, 0, 1, 1, 1, 1, 0], frequency=7, startDate='2025-01-15', endDate='2025-06-15', remainingQty=35, expiryDate='2025-09-01',
-                              containerNb=2, patientID=patient10.patientID, caregiverID=caregiver2.caregiverID, pharmacyID=pharmacy2.pharmacyID, pillID=pill1.pillID)
-
-    schedule11 = PillSchedule(day=[1], frequency=1, startDate='2025-01-15', endDate='2025-06-15', remainingQty=35, expiryDate='2025-09-01',
-                              containerNb=2, patientID=patient2.patientID, caregiverID=caregiver2.caregiverID, pharmacyID=pharmacy2.pharmacyID, pillID=pill2.pillID)
-
-    schedule12 = PillSchedule(day=[0, 1], frequency=2, startDate='2025-01-15', endDate='2025-06-15', remainingQty=55, expiryDate='2025-09-01',
-                              containerNb=3, patientID=patient2.patientID, caregiverID=caregiver2.caregiverID, pharmacyID=pharmacy2.pharmacyID, pillID=pill3.pillID)
-
-    db.session.add_all([schedule1, schedule2, schedule3, schedule4,
-                       schedule5, schedule6, schedule7, schedule8, schedule9, schedule10, schedule11, schedule12])
-    db.session.commit()
-
-    # Create Schedule Properties
-    schedule_properties = [
-        ScheduleProperty(dose=1, time='08:00:00',
-                         scheduleID=schedule1.scheduleID),
-        ScheduleProperty(dose=1, time='14:00:00',
-                         scheduleID=schedule1.scheduleID),
-        ScheduleProperty(dose=1, time='20:00:00',
-                         scheduleID=schedule1.scheduleID),
-
-        ScheduleProperty(dose=1, time='08:00:00',
-                         scheduleID=schedule2.scheduleID),
-        ScheduleProperty(dose=4, time='14:00:00',
-                         scheduleID=schedule2.scheduleID),
-        ScheduleProperty(dose=1, time='20:00:00',
-                         scheduleID=schedule2.scheduleID),
-
-        ScheduleProperty(dose=2, time='07:30:00',
-                         scheduleID=schedule3.scheduleID),
-        ScheduleProperty(dose=1, time='18:00:00',
-                         scheduleID=schedule3.scheduleID),
-
-        ScheduleProperty(dose=3, time='08:00:00',
-                         scheduleID=schedule4.scheduleID),
-        ScheduleProperty(dose=2, time='14:30:00',
-                         scheduleID=schedule4.scheduleID),
-        ScheduleProperty(dose=1, time='20:00:00',
-                         scheduleID=schedule4.scheduleID),
-
-        ScheduleProperty(dose=1, time='09:00:00',
-                         scheduleID=schedule5.scheduleID),
-
-        ScheduleProperty(dose=2, time='06:00:00',
-                         scheduleID=schedule6.scheduleID),
-        ScheduleProperty(dose=2, time='18:00:00',
-                         scheduleID=schedule6.scheduleID),
-
-        ScheduleProperty(dose=4, time='08:00:00',
-                         scheduleID=schedule7.scheduleID),
-        ScheduleProperty(dose=2, time='12:00:00',
-                         scheduleID=schedule7.scheduleID),
-        ScheduleProperty(dose=3, time='16:00:00',
-                         scheduleID=schedule7.scheduleID),
-        ScheduleProperty(dose=1, time='22:00:00',
-                         scheduleID=schedule7.scheduleID),
-
-        ScheduleProperty(dose=3, time='07:00:00',
-                         scheduleID=schedule8.scheduleID),
-        ScheduleProperty(dose=2, time='19:00:00',
-                         scheduleID=schedule8.scheduleID),
-
-        ScheduleProperty(dose=2, time='10:30:00',
-                         scheduleID=schedule9.scheduleID),
-        ScheduleProperty(dose=1, time='23:00:00',
-                         scheduleID=schedule9.scheduleID),
-
-        ScheduleProperty(dose=1, time='13:00:00',
-                         scheduleID=schedule10.scheduleID),
-
-        ScheduleProperty(dose=2, time='10:30:00',
-                         scheduleID=schedule11.scheduleID),
-        ScheduleProperty(dose=1, time='23:00:00',
-                         scheduleID=schedule11.scheduleID),
-
-        ScheduleProperty(dose=1, time='13:00:00',
-                         scheduleID=schedule12.scheduleID),
+    pills = [
+        Pill(name='Paracetamol', shape='Round', size=1, boxQuantity=10),
+        Pill(name='Ibuprofen', shape='Oval', size=2, boxQuantity=20),
+        Pill(name='Aspirin', shape='Round', size=1, boxQuantity=15),
+        Pill(name='Metformin', shape='Capsule', size=3, boxQuantity=30),
+        Pill(name='Lisinopril', shape='Oval', size=2, boxQuantity=25),
+        Pill(name='Amoxicillin', shape='Capsule', size=3, boxQuantity=21),
+        Pill(name='Atorvastatin', shape='Oval', size=2, boxQuantity=28),
+        Pill(name='Omeprazole', shape='Capsule', size=3, boxQuantity=14),
+        Pill(name='Cetirizine', shape='Round', size=1, boxQuantity=10),
+        Pill(name='Vitamin C', shape='Chewable', size=2, boxQuantity=50),
     ]
-
-    db.session.add_all(schedule_properties)
-
+    db.session.add_all(pills)
     db.session.commit()
 
-    print("Database populated successfully!")
+    # Create Pill Schedules
+    schedules = [
+        ([1, 1, 0], 3, '2025-01-01', '2025-02-01',
+         30, '2025-12-31', 1, patients[0]),
+        ([1, 0, 1], 3, '2025-01-01', '2025-02-01',
+         30, '2025-12-31', 1, patients[1]),
+        ([1, 0], 2, '2025-01-01', '2025-03-01', 40, '2025-11-30', 2, patients[2]),
+        ([1, 0, 0, 0], 4, '2025-01-10', '2025-03-10',
+         60, '2025-10-15', 3, patients[3]),
+        ([1, 1, 1, 0, 0, 0], 6, '2025-01-05',
+         '2025-04-05', 30, '2025-09-20', 2, patients[4]),
+        ([0, 1, 1, 0, 1, 0, 1], 7, '2025-01-15',
+         '2025-04-15', 50, '2025-08-31', 3, patients[5]),
+        ([1, 0, 0, 1, 0, 1, 1], 7, '2025-01-01',
+         '2025-05-01', 90, '2025-12-15', 2, patients[6]),
+        ([0, 1, 0, 1, 1], 5, '2025-01-10', '2025-05-10',
+         70, '2025-11-01', 3, patients[7]),
+        ([1, 1, 1, 0], 4, '2025-01-01', '2025-06-01',
+         45, '2025-12-01', 1, patients[8]),
+        ([0, 1, 1], 3, '2025-01-05', '2025-06-30',
+         60, '2025-10-01', 2, patients[9]),
+    ]
+    db.session.add_all([
+        PillSchedule(
+            day=day, frequency=freq, startDate=start, endDate=end, remainingQty=qty, expiryDate=exp,
+            containerNb=cont, patientID=pat.patientID, pillID=pills[0].pillID
+        )
+        for day, freq, start, end, qty, exp, cont, pat in schedules
+    ])
+    db.session.commit()
