@@ -47,18 +47,17 @@ def handle_notification(data):
         print(f"  Event: {event}")
         print(f"  Prop Id: {props}\n")
         patient = Patient.query.filter_by(raspberryPiId=pi_id).first()
-        if patient and patient.raspberryPiId:
-            if patient.raspberryPiId == pi_id:
-                match event:
-                    case "missed":
-                        message = patient.miss_dose(props)
-                        create_notification(patient.userID, message)
-                    case "released":
-                        patient.confirm_dose(props)
-                    case "early_release":
-                        patient.confirm_dose(props)
-                    case "empty":
-                        message = patient.empty_container(props)
-                        create_notification(patient.userID, message)
-                    case _:
-                        print("⚠️ Unknown event type received")
+        if patient:
+            match event:
+                case "missed":
+                    message = patient.miss_dose(props)
+                    create_notification(patient.userID, message)
+                case "released":
+                    patient.confirm_dose(props)
+                case "early_release":
+                    patient.confirm_dose(props)
+                case "empty":
+                    message = patient.empty_container(props)
+                    create_notification(patient.userID, message)
+                case _:
+                    print("⚠️ Unknown event type received")
