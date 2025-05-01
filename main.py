@@ -54,6 +54,15 @@ def updateRpiID():
     return redirect(url_for('main.dispenser'))
 
 
+@main.route('/deleteProfile', methods=["POST"])
+@login_required
+def deleteProfile():
+    userID = current_user.userID
+    User.delete_user(userID)
+    flash("Your account as been deleted successfully!", "success")
+    return redirect(url_for('auth.login'))
+
+
 @main.route('/updateProfile', methods=["POST"])
 @login_required
 def updateProfile():
@@ -425,7 +434,7 @@ def createSchedule(patient_id):
 def createSchedule_post(patient_id):
     if not isCarer(patient_id):
         flash("You are not allowed to access this route", "failure")
-        return redirect(url_for('maini.home'))
+        return redirect(url_for('main.home'))
     schedule = PillSchedule()
     patient = Patient.query.get_or_404(patient_id)
     pillID = request.form.get('pill_id')

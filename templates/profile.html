@@ -31,10 +31,8 @@
 
 
                     <p class="text-gray-600 dark:text-gray-300">{{user.role|capitalize}}</p>
-                    <!-- Save Button -->
-                    <button type="button" id="editButton" onclick="enableEditing()"
-                        class="mt-4 bg-indigo-800 text-white px-4 py-2 rounded-lg hover:bg-blue-900 transition-colors duration-300">Edit
-                        Profile</button>
+
+
                     <button id="saveButton" style="display:none;"
                         class="mt-4 bg-indigo-800 text-white px-4 py-2 rounded-lg hover:bg-blue-900 transition-colors duration-300">
                         Update Profile
@@ -113,8 +111,21 @@
                     </ul>
                 </div>
             </div>
+            <div class="flex gap-x-4 ml-4">
+                <button type="button" id="editButton" onclick="enableEditing()"
+                    class="mt-4 bg-indigo-800 text-white px-4 py-2 rounded-lg hover:bg-blue-900 transition-colors duration-300">Edit
+                    Profile</button>
+
+
+        </form>
+        <form action="{{ url_for('main.deleteProfile') }}" method="POST">
+            <button type="submit" id="deleteButton"
+                class="mt-4 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors duration-300">Delete
+                Profile
+            </button>
         </form>
     </div>
+
 </div>
 <script>
     function enableEditing() {

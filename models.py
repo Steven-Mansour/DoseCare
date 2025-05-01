@@ -44,6 +44,12 @@ class User(db.Model, UserMixin):
     notifications = db.relationship(
         'Notification', back_populates='user', cascade="all, delete-orphan")
 
+    def delete_user(userID):
+        user = User.query.filter_by(userID=userID).first()
+        db.session.delete(user)
+        db.session.commit()
+        return
+
     def get_unread_notifications(self):
         # Execute query to get all unread notifications
         notif = Notification.query.filter_by(
