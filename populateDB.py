@@ -1,7 +1,7 @@
-
 from app import db, create_app
 from models import User, Patient, Caregiver, Pharmacy, PillSchedule, Pill, ScheduleProperty, Notification, patient_pharmacy
 from flask import Flask
+from datetime import time
 
 with create_app().app_context():
     # Create Users
@@ -10,7 +10,7 @@ with create_app().app_context():
         ('jane.smith@example.com', 'hashedpassword2'),  # patient
         ('steven.mansour@lau.edu', 'steven'),  # pharmacist
         ('steven@lau', '123'),  # patient
-        ('hillarytannous@gmail.com', '123'),  # caregiver
+        ('stevenmansour01@gmail.com', '123'),  # caregiver
         ('mj@lau', '123'),  # pharmacist
         ('toni@lau', '123'),  # patient
         ('anthony@lau', '123'),  # patient
@@ -110,11 +110,38 @@ with create_app().app_context():
         ([0, 1, 1], 3, '2025-01-05', '2025-06-30',
          60, '2025-10-01', 2, patients[9]),
     ]
-    db.session.add_all([
-        PillSchedule(
-            day=day, frequency=freq, startDate=start, endDate=end, remainingQty=qty, expiryDate=exp,
-            containerNb=cont, patientID=pat.patientID, pillID=pills[0].pillID
+    pill_schedules = []
+    for day, freq, start, end, qty, exp, cont, pat in schedules:
+        schedule = PillSchedule(
+            day=day,
+            frequency=freq,
+            startDate=start,
+            endDate=end,
+            remainingQty=qty,
+            expiryDate=exp,
+            containerNb=cont,
+            patientID=pat.patientID,
+            pillID=pills[0].pillID
         )
-        for day, freq, start, end, qty, exp, cont, pat in schedules
-    ])
+        db.session.add(schedule)
+        pill_schedules.append(schedule)
+    db.session.commit()
+
+    # Create ScheduleProperties (dose + time)
+    times = [
+        time(8, 0), time(12, 0), time(18, 0), time(21, 0),
+        time(7, 30), time(13, 45), time(19, 15), time(22, 0)
+    ]
+
+    schedule_properties = []
+    for i, schedule in enumerate(pill_schedules):
+        for j in range(schedule.frequency):
+            prop = ScheduleProperty(
+                time=times[(i + j) % len(times)],
+                dose=1 + (j % 3),  # Just vary doses: 1, 2, or 3
+                scheduleID=schedule.scheduleID
+            )
+            schedule_properties.append(prop)
+
+    db.session.add_all(schedule_properties)
     db.session.commit()
